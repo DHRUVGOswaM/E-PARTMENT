@@ -13,6 +13,7 @@ const navItems = [
   { name: "About", path: "/about", icon: <Info className="w-5 h-5" /> },
   { name: "Contact", path: "/contact", icon: <Phone className="w-5 h-5" /> },
   { name: "FAQ's", path: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
+  { name: "Documents", path: "/document-repository", icon: <HelpCircle className="w-5 h-5" /> },
 ];
 
 export default function NavbarClient() {

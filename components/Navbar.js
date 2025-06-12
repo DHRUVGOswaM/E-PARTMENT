@@ -12,6 +12,7 @@ const Navbar = async () => {
         <Link
           href="/"
           className="text-2xl font-extrabold text-blue-900 tracking-wide hover:scale-105 transition"
+        
         >
           E-PARTMENT
         </Link>

@@ -124,6 +124,17 @@ export default function HomePage() {
               link: "/Reports",
             },
             {
+  title: "Document Repository",
+  img: "/image.png",
+  desc: "Store, access and manage all important society documents in a secure, organized digital repository anytime.",
+  link: "/documents",
+},
+{
+  title: "Staff Management",
+  img: "/image copy.png",
+  desc: "Maintain staff details, attendance, shift schedules, and assign responsibilities with complete visibility.",
+  link: "/staff",
+},           {
               title: "Explore All Features",
               img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748093218/1f0df4b4-dd0e-4d2e-9130-2559609355c1.png",
               desc: "Check out all features that AppSociety has to offer today, while we keep adding many more.",
