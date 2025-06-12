@@ -246,7 +246,8 @@ export default function AdminPage() {
   const [updatingUserId, setUpdatingUserId] = useState(null);
 
   const roles = [
-    "ADMIN",
+    "SUPER_ADMIN",
+    "SOCIETY_ADMIN",
     "SOCIETY_SECRETARY",
     "STAFF",
     "TECHNICIAN",

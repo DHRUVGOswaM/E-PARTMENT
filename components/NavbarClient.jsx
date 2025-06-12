@@ -42,19 +42,28 @@ export default function NavbarClient() {
 
     return (
       <div className="flex gap-2">
-        {dbUser?.role === "ADMIN" ? (
+        {dbUser?.role === "SUPER_ADMIN" ? (
           <>
             <Link href="/dashboard" className={baseBtn}>
               Dashboard
             </Link>
             <Link href="/dashboard/admin" className={baseBtn}>
-              Admin Panel
+              Super Admin
             </Link>
           </>
         ) : dbUser?.role === "GUARD" ? (
           <Link href="/dashboard/guard" className={baseBtn}>
             Guard Dashboard
           </Link>
+        ) : dbUser?.role === "SOCIETY_ADMIN" ? (
+          <div className="flex gap-2">
+            <Link href="/dashboard/society-admin" className={baseBtn}>
+              Society Admin
+            </Link>
+            <Link href="/dashboard" className={baseBtn}>
+              Dashboard
+            </Link>
+          </div>
         ) : (
           <Link href="/dashboard" className={baseBtn}>
             Dashboard

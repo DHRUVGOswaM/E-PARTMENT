@@ -15,7 +15,7 @@ export default async function AdminLayout({ children }) {
     select: { role: true },
   });
 
-  if (!user || user.role !== "ADMIN") { 
+  if (!user || user.role !== "SUPER_ADMIN") { 
     return redirect("/"); // ⛔️ Redirect if not admin
   }
 
