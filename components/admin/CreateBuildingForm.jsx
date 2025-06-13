@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 
 const CreateBuildingForm = () => {
   const [name, setName] = useState("");
@@ -21,7 +21,10 @@ const CreateBuildingForm = () => {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || "Error creating building");
+      if (!res.ok) {
+        toast.error(data.error || "Failed to create building");
+        return;
+      }
 
       toast.success("Building created successfully");
       setName("");

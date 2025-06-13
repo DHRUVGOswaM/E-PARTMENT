@@ -37,6 +37,7 @@ model User {
   society          Society?           @relation(fields: [societyId], references: [id])
   visitors         Visitor[]          @relation("PreApprovedBy")
   societyAdmins    SocietyAdmin[]
+  transactions     Transaction[]   
 
   @@map("users")
 }
@@ -285,6 +286,33 @@ model PendingAdmin {
   @@map("pending_admins")
 }
 
+// NEW MODEL: Transaction
+// This model will store all income and expense records.
+model Transaction {
+  id              String          @id @default(uuid())
+  amount          Float
+  type            TransactionType // INCOME or EXPENSE (from the new enum)
+  category        String?
+  description     String?
+  transactionDate DateTime        @map("transaction_date")
+  paymentMethod   String?         @map("payment_method")
+
+  payerName       String?         @map("payer_name")
+  flatNumber      String?         @map("flat_number")
+  forMonth        String?         @map("for_month")
+  paidStatus      Boolean?        @default(true) @map("paid_status")
+
+  // Link to the User model, where userId now stores the Clerk's user ID
+  userId          String
+  user            User            @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("transactions") // Maps to the "transactions" table in your database
+}
+
+
 enum ComplaintType {
   PLUMBING
   ELECTRICAL
@@ -340,4 +368,10 @@ enum AdminRequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+
+enum TransactionType {
+  INCOME
+  EXPENSE
 }

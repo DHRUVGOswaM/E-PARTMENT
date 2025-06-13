@@ -1,10 +1,8 @@
-<<<<<<< HEAD
-"use client"
+"use client";
 
-import * as React from "react"
-import * as TabsPrimitive from "@radix-ui/react-tabs"
-
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { cn } from "@/lib/utils";
 
 function Tabs({
   className,
@@ -13,10 +11,10 @@ function Tabs({
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn("flex flex-col items-center justify-between gap-4 p-6", className)}
       {...props}
     />
-  )
+  );
 }
 
 function TabsList({
@@ -27,12 +25,12 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]",
+        "bg-blue-100/50 text-blue-800 inline-flex h-10 w-fit items-center justify-center rounded-xl p-1 shadow-sm",
         className
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TabsTrigger({
@@ -43,12 +41,13 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-700 hover:bg-blue-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:focus-visible:ring-blue-500 transition-all duration-200 ease-out",
+        "inline-flex min-w-[100px] items-center justify-center rounded-md px-4 py-2 text-sm font-semibold tracking-wide disabled:pointer-events-none disabled:opacity-50",
         className
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TabsContent({
@@ -58,41 +57,13 @@ function TabsContent({
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      className={cn("flex-1 outline-none", className)}
+      className={cn(
+        "flex-1 animate-fade-in p-6 text-center transition-opacity duration-300 ease-in-out",
+        className
+      )}
       {...props}
     />
-  )
+  );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent }
-=======
-// components/ui/tabs.tsx
-
-"use client"
-
-import * as React from "react"
-import * as TabsPrimitive from '@radix-ui/react-tabs';
-import { forwardRef } from 'react';
-import { cn } from "@/lib/utils"; // if using className helper
-
-const Tabs = TabsPrimitive.Root;
-const TabsList = TabsPrimitive.List;
-const TabsTrigger = TabsPrimitive.Trigger;
-const TabsContent = forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content
-    ref={ref}
-    className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      className
-    )}
-    {...props}
-  />
-));
-
-TabsContent.displayName = TabsPrimitive.Content.displayName;
-
 export { Tabs, TabsList, TabsTrigger, TabsContent };
->>>>>>> f610b9afa0b4a457ff005a663090110be3fa39fe
