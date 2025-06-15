@@ -37,21 +37,23 @@ model User {
   society          Society?           @relation(fields: [societyId], references: [id])
   visitors         Visitor[]          @relation("PreApprovedBy")
   societyAdmins    SocietyAdmin[]
-  transactions     Transaction[]   
+  transactions     Transaction[]
+  pendingAccess    PendingAccess[]
 
   @@map("users")
 }
 
 model Society {
-  id                 String         @id @default(cuid())
+  id                 String          @id @default(cuid())
   name               String
   address            String
   registrationNumber String
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
   buildings          Building[]
   users              User[]
   societyAdmins      SocietyAdmin[]
+  pendingAccess      PendingAccess[]
 
   @@map("societies")
 }
@@ -264,7 +266,7 @@ model EmergencyContact {
   createdAt   DateTime @default(now())
   updatedAt   DateTime
   email       String
-  role        String
+  designation String
   users       User     @relation(fields: [userId], references: [id])
 
   @@map("emergency_contacts")
@@ -277,7 +279,7 @@ model PendingAdmin {
   phoneNumber        String
   apartmentName      String
   totalFlats         Int
-  address            String             
+  address            String
   registrationNumber String
   status             AdminRequestStatus @default(PENDING)
   createdAt          DateTime           @default(now())
@@ -297,21 +299,39 @@ model Transaction {
   transactionDate DateTime        @map("transaction_date")
   paymentMethod   String?         @map("payment_method")
 
-  payerName       String?         @map("payer_name")
-  flatNumber      String?         @map("flat_number")
-  forMonth        String?         @map("for_month")
-  paidStatus      Boolean?        @default(true) @map("paid_status")
+  payerName  String?  @map("payer_name")
+  flatNumber String?  @map("flat_number")
+  forMonth   String?  @map("for_month")
+  paidStatus Boolean? @default(true) @map("paid_status")
 
   // Link to the User model, where userId now stores the Clerk's user ID
-  userId          String
-  user            User            @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("transactions") // Maps to the "transactions" table in your database
 }
 
+model PendingAccess {
+  id            String             @id @default(cuid())
+  userId        String             @unique // one open request per user
+  societyId     String
+  requestedRole Role               @default(HOUSE_OWNER)
+  status        AdminRequestStatus @default(PENDING)
+
+  buildingId String? // if you later let them pick a building
+  flatId     String? // or flat in the form
+
+  user    User    @relation(fields: [userId], references: [id])
+  society Society @relation(fields: [societyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pending_access")
+}
 
 enum ComplaintType {
   PLUMBING
@@ -369,7 +389,6 @@ enum AdminRequestStatus {
   APPROVED
   REJECTED
 }
-
 
 enum TransactionType {
   INCOME
