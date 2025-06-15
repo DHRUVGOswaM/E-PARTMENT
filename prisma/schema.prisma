@@ -259,12 +259,12 @@ model Event {
 
 model EmergencyContact {
   userId      String
-  id          String   @id
+  id          String   @id @default(cuid())
   name        String
   phoneNumber String
-  type        String
+  type        String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
   email       String
   designation String
   users       User     @relation(fields: [userId], references: [id])

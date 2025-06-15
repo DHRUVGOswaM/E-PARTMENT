@@ -127,7 +127,7 @@ export default function HomePage() {
   title: "Document Repository",
   img: "/image.png",
   desc: "Store, access and manage all important society documents in a secure, organized digital repository anytime.",
-  link: "/documents",
+  link: "/document",
 },
 {
   title: "Staff Management",
