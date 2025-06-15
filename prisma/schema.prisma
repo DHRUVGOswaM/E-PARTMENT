@@ -320,6 +320,8 @@ model PendingAccess {
   societyId     String
   requestedRole Role               @default(HOUSE_OWNER)
   status        AdminRequestStatus @default(PENDING)
+  phoneNumber    String? // optional, if they want to provide a phone number
+  imageUrl     String? // optional, if they want to upload an image
 
   buildingId String? // if you later let them pick a building
   flatId     String? // or flat in the form
