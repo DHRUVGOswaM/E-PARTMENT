@@ -10,7 +10,7 @@ export default function Footer() {
             Take a giant leap towards a SMART Society!
           </h2>
           <a
-            href="/dashboard"
+            href="/society-admin/request"
             className="bg-white text-blue-700 mt-4 md:mt-0 px-6 py-3 rounded hover:bg-gray-100 font-semibold transition"
           >
             SETUP YOUR SOCIETY
@@ -21,7 +21,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-10 mt-12 text-sm">
           {/* Brand */}
           <div>
-            <h3 className="text-xl font-bold mb-2">DIGISOC</h3>
+            <h3 className="text-xl font-bold mb-2">EWAYS</h3>
             <p className="text-gray-300">
               © 2025 - Digital Platform for Residential Communities.
               <br />
@@ -48,8 +48,8 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/features" className="hover:underline">
-                  Features
+                <a href="/about" className="hover:underline">
+                  About
                 </a>
               </li>
               <li>

@@ -140,6 +140,7 @@ export default function HomePage() {
               desc: "Check out all features that AppSociety has to offer today, while we keep adding many more.",
               link: "/Features",
             },
+            
           ].map((feature, index) => (
             <Link href={feature.link || "#"} key={index} className="block">
               <motion.div
@@ -187,10 +188,10 @@ export default function HomePage() {
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Link
-            href="/admin"
+            href="/join-society"
             className="bg-red-600 text-white px-6 py-3 rounded-full hover:bg-blue-700 transition"
           >
-            Admin Login
+            Join a Society
           </Link>
         </div>
       </motion.section>

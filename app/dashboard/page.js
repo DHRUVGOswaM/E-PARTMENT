@@ -1,8 +1,15 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import {  Loader2, PhoneCall } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import Link from "next/link"; // import Link from next/link
+import DashboardAdmin from "../../components/dashboard/DashboardAdmin";
+import DashboardSocietySecretary from "../../components/dashboard/DashboardSocietySecretary";
+import DashboardWatchMan from "../../components/dashboard/DashboardWatchMan";
+import DashboardHouseOwner from "../../components/dashboard/DashboardHouseOwner";
+import DashboardStaff from "../../components/dashboard/DashboardStaff";
+import DashboardTechnician from "../../components/dashboard/DashboardTechnician";
+import DashboardDefault from "../../components/dashboard/DashboardDefault";
 
 const sampleNotices = [
   "Water supply will be off from 2 PM to 5 PM.",
@@ -11,159 +18,106 @@ const sampleNotices = [
   "New security staff onboarding tomorrow.",
 ];
 
-export default function Dashboard() {
-  const { user } = useUser();
-  const [index, setIndex] = useState(0);
 
+export default function Dashboard() {
+  const [role, setRole] = useState("VISITOR");
+  const [userFirstName, setUserFirstName] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  //fetch user details from api/users/me
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % sampleNotices.length);
-    }, 3000); // 3 seconds each notice
-    return () => clearInterval(interval);
+    async function fetchUserDetails() {
+      try {
+        const res = await fetch("/api/users/me");
+        if (!res.ok) {
+          throw new Error("Failed to fetch user details");
+        }
+
+        const data = await res.json();
+        setRole(data.role);
+        setUserFirstName(data.firstName || data.name || "User");
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUserDetails();
   }, []);
 
-  const role = user?.publicMetadata?.role; // Example: "watchman", "resident", "secretary", "admin"
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-blue-800 text-xl">
+        Loading dashboard...
+        <Loader2 className="animate-spin ml-2 text-blue-500" />
+      </div>
+    );
+  }
+
+  // Helper to pick the right chunk ⬇
+  const renderRoleDashboard = () => {
+    switch (role) {
+      case "SUPER_ADMIN":
+        return <DashboardAdmin />;
+
+      case "SOCIETY_SECRETARY":
+      case "SOCIETY_ADMIN":
+        return <DashboardSocietySecretary />;
+
+      case "WATCHMAN":
+        return <DashboardWatchMan />;
+
+      case "STAFF":
+        return <DashboardStaff />;
+
+      case "TECHNICIAN":
+        return <DashboardTechnician />;
+
+      case "HOUSE_OWNER":
+      case "SOCIETY_MEMBER":
+        return <DashboardHouseOwner />;
+
+      default:
+        return <DashboardDefault />;
+    }
+  };
 
   return (
-    <div className="min-h-screen px-4 py-8 bg-blue-50">
-      <h1 className="text-2xl font-bold mb-4 text-blue-900">
-        Welcome, {user?.firstName}!
+    <div className="min-h-screen px-4 py-8 bg-gradient-to-br from-blue-50 to-blue-100">
+      <h1 className="text-3xl font-bold mb-6 text-blue-900 text-center">
+        Welcome, <span className="text-blue-700">{userFirstName}</span>!
       </h1>
 
-      {/* Notice Marquee */}
-      <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-900 p-4 mb-6">
-        <marquee behavior="scroll" direction="left" scrollamount="5">
-          {sampleNotices[index]}
+      <div className="bg-blue-200 rounded-md text-blue-900 p-3 mb-6 text-sm font-medium shadow-sm">
+        <marquee behavior="scroll" direction="left" scrollamount="4">
+          {sampleNotices.join(" ❘ ")} {/* vertical bar separator */}
         </marquee>
       </div>
 
-      {/* Sections based on Roles */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Facility Booking (not for watchmen) */}
-        {role !== "watchman" && (
-          <Link href="../Facilities" passHref legacyBehavior>
-            <a>
-              <Section
-                title="Facility Booking"
-                description="Book the community hall or gym."
-              />
-            </a>
-          </Link>
-        )}
-
-        {/* Visitor Management (only for watchman, secretary, admin) */}
-        {(role === "watchman" || role === "secretary" || role === "admin") && (
-          <Link href="../visitors" passHref legacyBehavior>
-            <a>
-              <Section
-                title="Visitor Management"
-                description="Log visitor entries and update counts."
-              />
-            </a>
-          </Link>
-        )}
-
-        {/* Payment Reports (secretary, admin only) */}
-        {(role === "secretary" || role === "admin") && (
-          <Link href="../billing" passHref legacyBehavior>
-            <a>
-              <Section
-                title="Payment Reports"
-                description="View & export payment data."
-              />
-            </a>
-          </Link>
-        )}
-
-        {/* Noticeboard Management (secretary, admin only) */}
-        {(role === "secretary" || role === "admin") && (
-          <Link href="../notice-board" passHref legacyBehavior>
-            <a>
-              <Section
-                title="Noticeboard Management"
-                description="Post and manage notices for residents."
-              />
-            </a>
-          </Link>
-        )}
-
-        {/* Role Management (admin only) */}
-        {role === "admin" && (
-          <Link href="/role-management" passHref legacyBehavior>
-            <a>
-              <Section
-                title="Role & Society Management"
-                description="Assign and manage roles across societies."
-              />
-            </a>
-          </Link>
-        )}
-
-        {/* Accounting Section (not for watchman) */}
-        {role !== "watchman" && (
-          <Link href="../Accounting" passHref legacyBehavior>
-            <a>
-              <Section
-                title="End-to-End Accounting"
-                description="Track income & expenses, manage financials."
-              />
-            </a>
-          </Link>
-        )}
-
-        {/* Alerts Section (not for watchman) */}
-        {role !== "watchman" && (
-          <Link href="../Alerts" passHref legacyBehavior>
-            <a>
-              <Section
-                title="Emergency Alerts"
-                description="Broadcast urgent notifications to residents."
-              />
-            </a>
-          </Link>
-        )}
-
-        {/* Features Section (visible to all) */}
-        <Link href="../Features" passHref legacyBehavior>
-          <a>
-            <Section
-              title="Features"
-              description="Explore all tools and features AppSociety offers."
-            />
-          </a>
+      {/* Quick Access Section */}
+      <div className="flex justify-between mx-auto max-w-6xl mb-8">
+        <Link
+          href="/emergency-contacts"
+          className="flex items-center gap-2 p-4 bg-white rounded-xl shadow-md hover:shadow-lg hover:bg-blue-100 transition-all"
+        >
+          <PhoneCall className="text-red-500" />
+          <span className="text-blue-800 font-semibold">
+            Emergency Contacts
+          </span>
         </Link>
 
-        {/* Reports Section (secretary and admin only) */}
-        {(role === "secretary" || role === "admin") && (
-          <Link href="../Reports" passHref legacyBehavior>
-            <a>
-              <Section
-                title="Financial Reports"
-                description="Generate and view financial statements."
-              />
-            </a>
-          </Link>
-        )}
-
-        {/* Polls Section (not for watchman) */}
-        {role !== "watchman" && (
-          <Link href="../Polls" passHref legacyBehavior>
-            <a>
-              <Section
-                title="Polls & Voting"
-                description="Create and manage community polls."
-              />
-            </a>
-          </Link>
-        )}
-        <Link href="../complaints" passHref legacyBehavior>
-          <a>
-            <Section
-              title="File a Complaint"
-              description="Report issues and concerns within the community."
-            />
-          </a>
+        <Link
+          href="/notice-board"
+          className="flex items-center gap-2 p-4 bg-white rounded-xl shadow-md hover:shadow-lg hover:bg-blue-100 transition-all"
+        >
+          <span className="text-yellow-600 text-lg">📌</span>
+          <span className="text-blue-800 font-semibold">Notice Board</span>
         </Link>
+      </div>
+
+      {/* Role-Based Features */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {renderRoleDashboard()}
       </div>
     </div>
   );
