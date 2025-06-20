@@ -61,7 +61,7 @@ export async function GET() {
     console.log(`✅ Fetched Prisma user ID: ${prismaUser.id}`);
 
     const transactions = await db.transaction.findMany({
-      where: { userId: prismaUser.id },
+      where: { recorderId: prismaUser.id },
       orderBy: { transactionDate: "desc" },
     });
 
@@ -139,7 +139,7 @@ export async function POST(request) {
         flatNumber: flatNumber || null,
         forMonth: forMonth || null,
         paidStatus: paidStatus ?? null,
-        userId: prismaUserId,
+        recorderId: prismaUserId,
       },
     });
 

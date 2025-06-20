@@ -104,7 +104,7 @@ const isAdmin = ADMIN_EMAILS.includes(user?.emailAddresses[0].emailAddress);
   if (!isSignedIn) {
     return (
       <div className="p-6 max-w-xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Login to View Notices</h1>
+        <h1 className="text-2xl font-bold mb-4">Join a Society to View Notices</h1>
         <SignIn path="/notice-board" routing="path" />
       </div>
     );
