@@ -351,6 +351,31 @@ export default function AccountingPage() {
   // State for overall data loading indication
   const [loadingData, setLoadingData] = useState(false);
 
+  const [role, setRole] = useState("VISITOR"); // Default role for demo purposes
+  useEffect(() => {
+    // Simulate role fetching logic (e.g., from Clerk user metadata or a database)
+    async function fetchUserRole() {
+      console.log("Fetching user role from API...");
+      try {
+        const res = await fetch("/api/users/me");
+        if (!res.ok) {
+          throw new Error("Failed to fetch user role");
+        }
+        const user = await res.json();
+        console.log("Fetched user role:", user.role);
+        setRole(user.role);
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      } finally {
+        console.log("User role fetch completed.");
+      }
+
+      
+    }
+    fetchUserRole();
+  }, []);
+  
+
   // States to hold processed financial data for display
   const [allTransactions, setAllTransactions] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
@@ -634,7 +659,11 @@ export default function AccountingPage() {
   return (
     <div className="bg-gray-50 min-h-screen px-4 py-10 font-sans antialiased">
       {/* Custom message modal rendered at the top level */}
-      <MessageModal message={message} type={messageType} onClose={clearMessage} />
+      <MessageModal
+        message={message}
+        type={messageType}
+        onClose={clearMessage}
+      />
 
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Premium Accounting Unlock Section (Conditional, based on isSubscribed) */}
@@ -647,9 +676,13 @@ export default function AccountingPage() {
               height={250}
               className="rounded-lg mb-6 mx-auto object-cover"
             />
-            <h1 className="text-4xl font-extrabold text-gray-900 mb-4 leading-tight">Unlock Premium Accounting</h1>
+            <h1 className="text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
+              Unlock Premium Accounting
+            </h1>
             <p className="text-gray-700 text-lg mb-6 max-w-2xl mx-auto">
-              Simplify society finances with powerful features: income & expense tracking, bank reconciliation, downloadable audit-ready reports and more.
+              Simplify society finances with powerful features: income & expense
+              tracking, bank reconciliation, downloadable audit-ready reports
+              and more.
             </p>
             <Link
               href="/demo"
@@ -659,7 +692,10 @@ export default function AccountingPage() {
             </Link>
             <p className="mt-6 text-sm text-gray-500">
               Already subscribed?{" "}
-              <Link href="/login" className="text-blue-600 underline hover:text-blue-800">
+              <Link
+                href="/login"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
                 Log in
               </Link>
             </p>
@@ -668,9 +704,12 @@ export default function AccountingPage() {
 
         {/* Feature Grid Section */}
         <div className="bg-white shadow-xl rounded-2xl p-8 border border-gray-100">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Society Accounting Features</h2>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">
+            Society Accounting Features
+          </h2>
           <p className="text-gray-700 mb-8 max-w-2xl">
-            Access powerful tools to manage your society’s complete financial lifecycle — from dues and collections to reports and audits.
+            Access powerful tools to manage your society’s complete financial
+            lifecycle — from dues and collections to reports and audits.
           </p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
             {[...mainFeatures, ...(showAllFeatures ? extraFeatures : [])].map(
@@ -692,7 +731,8 @@ export default function AccountingPage() {
                   <p className="text-gray-600 text-sm mb-3">{desc}</p>
                   <button
                     className="text-sm text-blue-700 hover:underline font-semibold focus:outline-none"
-                    onClick={(e) => { // Prevent card click from also toggling
+                    onClick={(e) => {
+                      // Prevent card click from also toggling
                       e.stopPropagation(); // Stop event propagation to avoid triggering parent li's onClick
                       toggleFeature(title);
                     }}
@@ -713,7 +753,9 @@ export default function AccountingPage() {
               onClick={() => setShowAllFeatures((prev) => !prev)}
               className="text-blue-700 font-semibold hover:underline focus:outline-none text-lg px-6 py-3 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors"
             >
-              {showAllFeatures ? "Show Less Features" : "See All Accounting Features"}
+              {showAllFeatures
+                ? "Show Less Features"
+                : "See All Accounting Features"}
             </button>
           </div>
         </div>
@@ -721,19 +763,39 @@ export default function AccountingPage() {
         {/* Charts and Summary Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Monthly Finance Overview</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">
+              Monthly Finance Overview
+            </h3>
             {monthlyData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={monthlyData}>
                   <XAxis dataKey="name" stroke="#6b7280" />
                   <YAxis stroke="#6b7280" />
                   <Tooltip
-                    formatter={(value, name) => [`₹ ${value.toLocaleString('en-IN')}`, name]}
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px' }}
-                    labelStyle={{ color: '#374151', fontWeight: 'bold' }}
+                    formatter={(value, name) => [
+                      `₹ ${value.toLocaleString("en-IN")}`,
+                      name,
+                    ]}
+                    contentStyle={{
+                      backgroundColor: "#ffffff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      padding: "10px",
+                    }}
+                    labelStyle={{ color: "#374151", fontWeight: "bold" }}
                   />
-                  <Bar dataKey="income" fill="#2563eb" name="Income" radius={[10, 10, 0, 0]} />
-                  <Bar dataKey="expense" fill="#f97316" name="Expense" radius={[10, 10, 0, 0]} />
+                  <Bar
+                    dataKey="income"
+                    fill="#2563eb"
+                    name="Income"
+                    radius={[10, 10, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="expense"
+                    fill="#f97316"
+                    name="Expense"
+                    radius={[10, 10, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -743,49 +805,83 @@ export default function AccountingPage() {
             )}
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 space-y-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">This Month's Summary</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              This Month's Summary
+            </h3>
             <div className="flex justify-between items-center pb-2 border-b border-gray-200">
               <div className="text-gray-600 font-medium">Total Income</div>
-              <div className="font-bold text-green-600 text-lg">₹ {summary.totalIncome.toLocaleString('en-IN')}</div>
+              <div className="font-bold text-green-600 text-lg">
+                ₹ {summary.totalIncome.toLocaleString("en-IN")}
+              </div>
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-gray-200">
               <div className="text-gray-600 font-medium">Total Expenses</div>
-              <div className="font-bold text-red-600 text-lg">₹ {summary.totalExpenses.toLocaleString('en-IN')}</div>
+              <div className="font-bold text-red-600 text-lg">
+                ₹ {summary.totalExpenses.toLocaleString("en-IN")}
+              </div>
             </div>
             <div className="flex justify-between items-center pt-2">
-              <div className="text-gray-700 font-semibold text-lg">Net Balance</div>
-              <div className="font-extrabold text-blue-700 text-2xl">₹ {summary.netBalance.toLocaleString('en-IN')}</div>
+              <div className="text-gray-700 font-semibold text-lg">
+                Net Balance
+              </div>
+              <div className="font-extrabold text-blue-700 text-2xl">
+                ₹ {summary.netBalance.toLocaleString("en-IN")}
+              </div>
             </div>
             {userId && ( // Display Clerk's userId for debugging/identification
-              <p className="text-xs text-gray-400 mt-4 break-all">Logged in as Clerk ID: {userId}</p>
+              <div>
+                <p className="text-xs text-gray-400 mt-4 break-all">
+                  Logged in as Clerk ID: {userId}
+                </p>
+                <p className="text-xs text-gray-400 mt-4 break-all">
+                  Logged in user role: {role}
+                </p>
+              </div>
             )}
             <button
-                onClick={() => signOut()} // Clerk's signOut method
-                className="mt-4 bg-gray-200 text-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 transition-colors self-end flex items-center justify-center"
-              >
-                <LogOut className="w-4 h-4 mr-2" /> Log Out
-              </button>
+              onClick={() => signOut()} // Clerk's signOut method
+              className="mt-4 bg-gray-200 text-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 transition-colors self-end flex items-center justify-center"
+            >
+              <LogOut className="w-4 h-4 mr-2" /> Log Out
+            </button>
           </div>
         </div>
 
         {/* Forms Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
           <div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-5">Record New Payment</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-5">
+              Record New Payment
+            </h3>
             {/* Pass user's email to the form for the API route's user creation fallback */}
-            <AddPaymentForm onSubmit={handleAddPayment} showMessage={showMessage} userEmail={user?.primaryEmailAddress?.emailAddress} />
+            <AddPaymentForm
+              onSubmit={handleAddPayment}
+              showMessage={showMessage}
+              userEmail={user?.primaryEmailAddress?.emailAddress}
+            />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-5">Log New Expense</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-5">
+              Log New Expense
+            </h3>
             {/* Pass user's email to the form for the API route's user creation fallback */}
-            <AddExpenseForm onSubmit={handleAddExpense} showMessage={showMessage} userEmail={user?.primaryEmailAddress?.emailAddress} />
+            <AddExpenseForm
+              onSubmit={handleAddExpense}
+              showMessage={showMessage}
+              userEmail={user?.primaryEmailAddress?.emailAddress}
+            />
           </div>
         </div>
 
         {/* Member Receipts Section */}
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 space-y-6">
-          <h2 className="text-2xl font-bold text-gray-800">Member Payment Receipts</h2>
-          <p className="text-gray-600 max-w-2xl">View and download payment receipts for members. This section automatically updates with new payments.</p>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Member Payment Receipts
+          </h2>
+          <p className="text-gray-600 max-w-2xl">
+            View and download payment receipts for members. This section
+            automatically updates with new payments.
+          </p>
           {paymentsList.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {paymentsList.map((payment) => (
@@ -801,7 +897,10 @@ export default function AccountingPage() {
 
         {/* Back to Dashboard Link */}
         <div className="text-center mt-10">
-          <Link href="/dashboard" className="text-blue-600 font-medium hover:underline text-lg">
+          <Link
+            href="/dashboard"
+            className="text-blue-600 font-medium hover:underline text-lg"
+          >
             ← Back to Dashboard
           </Link>
         </div>

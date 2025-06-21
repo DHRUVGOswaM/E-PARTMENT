@@ -23,22 +23,22 @@ model User {
   societyId        String?
   buildingId       String?
   name             String?
-  EmergencyContact EmergencyContact[]
   bookings         Booking[]
   complaints       Complaint[]
   documents        Document[]
+  EmergencyContact EmergencyContact[]
   events           Event[]
   flatsOwned       Flat[]             @relation("FlatOwner")
   flatsResiding    Flat[]             @relation("FlatResident")
   notices          Notice[]           @relation("UserNotices")
+  pendingAccess    PendingAccess?
   polls            Poll[]
   rsvps            RSVP[]
+  societyAdmins    SocietyAdmin?
+  transactions     Transaction[]      @relation("TransactionRecorder")
   building         Building?          @relation(fields: [buildingId], references: [id])
   society          Society?           @relation(fields: [societyId], references: [id])
   visitors         Visitor[]          @relation("PreApprovedBy")
-  societyAdmins    SocietyAdmin[]
-  pendingAccess    PendingAccess[]
-  transactions     Transaction[]      @relation("TransactionRecorder")
 
   @@map("users")
 }
@@ -50,11 +50,12 @@ model Society {
   registrationNumber String
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
-  notices            Notice[]
   buildings          Building[]
-  users              User[]
-  societyAdmins      SocietyAdmin[]
+  notices            Notice[]
   pendingAccess      PendingAccess[]
+  societyAdmins      SocietyAdmin[]
+  users              User[]
+  marqueeNotices    MarqueeNotice[]
 
   @@map("societies")
 }
@@ -67,9 +68,8 @@ model SocietyAdmin {
   totalFlats  Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  user    User    @relation(fields: [userId], references: [id])
-  society Society @relation(fields: [societyId], references: [id])
+  society     Society  @relation(fields: [societyId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
   @@map("society_admins")
 }
@@ -102,8 +102,8 @@ model Flat {
   building     Building      @relation(fields: [buildingId], references: [id])
   owner        User?         @relation("FlatOwner", fields: [ownerId], references: [id])
   resident     User?         @relation("FlatResident", fields: [residentId], references: [id])
-  visitors     Visitor[]
   transactions Transaction[] @relation("FlatTransactions")
+  visitors     Visitor[]
 
   @@map("flats")
 }
@@ -167,8 +167,8 @@ model Notice {
   postedAt  DateTime @default(now())
   postedBy  String
   societyId String
-  society   Society  @relation(fields: [societyId], references: [id])
   user      User     @relation("UserNotices", fields: [postedBy], references: [id])
+  society   Society  @relation(fields: [societyId], references: [id])
 
   @@map("notices")
 }
@@ -190,9 +190,9 @@ model Vendor {
   service    String
   contact    String
   email      String
-  imageUrl   String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  imageUrl   String?
   vendorLogs VendorLog[]
 
   @@map("vendors")
@@ -201,12 +201,12 @@ model Vendor {
 model VendorLog {
   id        String    @id @default(cuid())
   vendorId  String
-  vendor    Vendor    @relation(fields: [vendorId], references: [id])
   date      DateTime  @default(now())
   entryTime DateTime?
   exitTime  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  vendor    Vendor    @relation(fields: [vendorId], references: [id])
 
   @@map("vendor_logs")
 }
@@ -280,69 +280,56 @@ model PendingAdmin {
   id                 String             @id @default(cuid())
   name               String
   email              String             @unique
-  phoneNumber        String
   apartmentName      String
   totalFlats         Int
-  address            String
-  registrationNumber String
   status             AdminRequestStatus @default(PENDING)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  address            String
+  registrationNumber String
+  phoneNumber        String
 
   @@map("pending_admins")
 }
 
 model PendingAccess {
   id            String             @id @default(cuid())
-  userId        String             @unique // one open request per user
+  userId        String             @unique
   societyId     String
   requestedRole Role               @default(HOUSE_OWNER)
   status        AdminRequestStatus @default(PENDING)
-  phoneNumber   String? // optional, if they want to provide a phone number
-  imageUrl      String? // optional, if they want to upload an image
-
-  buildingId String? // if you later let them pick a building
-  flatId     String? // or flat in the form
-
-  user    User    @relation(fields: [userId], references: [id])
-  society Society @relation(fields: [societyId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  buildingId    String?
+  flatId        String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  imageUrl      String?
+  phoneNumber   String?
+  society       Society            @relation(fields: [societyId], references: [id])
+  user          User               @relation(fields: [userId], references: [id])
 
   @@map("pending_access")
 }
 
-// NEW MODEL: Transaction (Revised)
-// This model will store all income and expense records.
 model Transaction {
   id              String          @id @default(uuid())
   amount          Float
-  type            TransactionType // INCOME or EXPENSE (from the new enum)
+  type            TransactionType
   category        String?
   description     String?
   transactionDate DateTime        @map("transaction_date")
   paymentMethod   String?         @map("payment_method")
+  payerName       String?         @map("payer_name")
+  flatNumber      String?         @map("flat_number")
+  forMonth        String?         @map("for_month")
+  paidStatus      Boolean?        @default(true) @map("paid_status")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  flatId          String?
+  recorderId      String          @map("recorder_id")
+  flat            Flat?           @relation("FlatTransactions", fields: [flatId], references: [id])
+  recorder        User            @relation("TransactionRecorder", fields: [recorderId], references: [id])
 
-  // Fields for INCOME specific to a flat/resident
-  payerName  String?  @map("payer_name") // E.g., name of the person who paid
-  flatNumber String?  @map("flat_number") // Denormalized flat number for quick lookup (for display/search)
-  forMonth   String?  @map("for_month")
-  paidStatus Boolean? @default(true) @map("paid_status")
-
-  // NEW: Direct link to Flat for society-related income/expenses
-  flatId String?
-  flat   Flat?   @relation("FlatTransactions", fields: [flatId], references: [id])
-
-  // userId from your original schema means the user who recorded the transaction.
-  // Renamed to 'recorderId' for clarity.
-  recorderId String @map("recorder_id")
-  recorder   User   @relation("TransactionRecorder", fields: [recorderId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("transactions") // Maps to the "transactions" table in your database
+  @@map("transactions")
 }
 
 model Staff {
@@ -368,7 +355,7 @@ model Attendance {
 }
 
 model Feedback {
-  id        String   @id
+  id        String   @id @default(cuid())
   staffId   String
   message   String
   createdAt DateTime @default(now())
@@ -402,6 +389,16 @@ model Shift {
   shiftType String
   date      DateTime
   staff     Staff    @relation(fields: [staffId], references: [id])
+}
+
+
+model MarqueeNotice {
+  id         String   @id @default(cuid())
+  content    String
+  societyId  String
+  society    Society  @relation(fields: [societyId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 enum ComplaintType {
