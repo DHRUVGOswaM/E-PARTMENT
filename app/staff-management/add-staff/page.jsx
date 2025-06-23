@@ -27,7 +27,7 @@ export default function AddStaff() {
     data.append('role', formData.role);
     data.append('photo', formData.photo);
 
-    const res = await fetch('/api/staff/add', {
+    const res = await fetch('/api/staff-management/add', {
       method: 'POST',
       body: data,
     });

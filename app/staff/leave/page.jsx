@@ -11,7 +11,7 @@ export default function LeavePage() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('/api/leave', {
+      const response = await fetch('/api/staff/leave', {
         method: 'POST',
         body: JSON.stringify({ name, fromDate, toDate, reason }),
         headers: { 'Content-Type': 'application/json' },
@@ -36,7 +36,7 @@ export default function LeavePage() {
 
   const fetchLeaves = async () => {
     try {
-      const res = await fetch(`/api/leave?name=${name}`);
+      const res = await fetch(`/api/staff/leave`);
       const data = await res.json();
       setLeaves(data);
     } catch (error) {

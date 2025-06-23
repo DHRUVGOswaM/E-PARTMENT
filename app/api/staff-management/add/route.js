@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { db } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const prisma = new PrismaClient();
 
 export async function POST(req) {
   const data = await req.formData();
@@ -10,13 +10,21 @@ export async function POST(req) {
   const joinedOn = data.get("joinedOn");
   const image = data.get("image"); // file upload
 
+  const { userId } = await auth();
+  const user = await db.user.findUnique({
+    where: {clerkUserId: userId}
+  })
   // Assuming image is being saved as URL or base64 string
-  const saved = await prisma.staff.create({
+  const saved = await db.staff.create({
     data: {
+      id: userId,
       name,
       role,
-      joinedOn,
-      image: image.name || "", // You can also store file buffer or URL
+      image: image || "", // You can also store file buffer or URL
+      userId: user.id,
+      salary: 50000,
+      societyId: user.societyId,
+
     },
   });
 

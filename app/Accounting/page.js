@@ -5,9 +5,10 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, use } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import RoleGuard from '@/components/RoleGuard';
 
 // Clerk client-side hooks for authentication status and user details
 import { useAuth, useUser } from '@clerk/nextjs';
@@ -344,37 +345,34 @@ function MemberReceiptCard({ payment }) {
 
 // --- AccountingPage (Main Component) ---
 export default function AccountingPage() {
+   const [role, setRole] = useState("VISITOR");
+   const [roleFetched, setRoleFetched] = useState(false); // NEW
+// Default role for demo purposes
+useEffect(() => {
+  // Simulate role fetching logic (e.g., from Clerk user metadata or a database)
+  const fetchUserRole = async () => {
+    try {
+      const res = await fetch("/api/users/me");
+      if (!res.ok) throw new Error("Failed to fetch user role");
+      const user = await res.json();
+      setRole(user.role); // Set role
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      setRole("VISITOR"); // Or fallback role
+    } finally {
+      setRoleFetched(true); // Mark that role has been fetched
+    }
+  };
+
+  fetchUserRole();
+}, []);
+
   // Clerk hooks to get the authentication status and current user's ID.
   const { isLoaded, userId, signOut } = useAuth();
   const { user } = useUser(); // Provides access to the full Clerk user object (e.g., email)
 
   // State for overall data loading indication
   const [loadingData, setLoadingData] = useState(false);
-
-  const [role, setRole] = useState("VISITOR"); // Default role for demo purposes
-  useEffect(() => {
-    // Simulate role fetching logic (e.g., from Clerk user metadata or a database)
-    async function fetchUserRole() {
-      console.log("Fetching user role from API...");
-      try {
-        const res = await fetch("/api/users/me");
-        if (!res.ok) {
-          throw new Error("Failed to fetch user role");
-        }
-        const user = await res.json();
-        console.log("Fetched user role:", user.role);
-        setRole(user.role);
-      } catch (error) {
-        console.error("Error fetching user role:", error);
-      } finally {
-        console.log("User role fetch completed.");
-      }
-
-      
-    }
-    fetchUserRole();
-  }, []);
-  
 
   // States to hold processed financial data for display
   const [allTransactions, setAllTransactions] = useState([]);
@@ -849,52 +847,58 @@ export default function AccountingPage() {
 
         {/* Forms Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-          <div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-5">
-              Record New Payment
-            </h3>
-            {/* Pass user's email to the form for the API route's user creation fallback */}
-            <AddPaymentForm
-              onSubmit={handleAddPayment}
-              showMessage={showMessage}
-              userEmail={user?.primaryEmailAddress?.emailAddress}
-            />
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-5">
-              Log New Expense
-            </h3>
-            {/* Pass user's email to the form for the API route's user creation fallback */}
-            <AddExpenseForm
-              onSubmit={handleAddExpense}
-              showMessage={showMessage}
-              userEmail={user?.primaryEmailAddress?.emailAddress}
-            />
-          </div>
-        </div>
-
-        {/* Member Receipts Section */}
-        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 space-y-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Member Payment Receipts
-          </h2>
-          <p className="text-gray-600 max-w-2xl">
-            View and download payment receipts for members. This section
-            automatically updates with new payments.
-          </p>
-          {paymentsList.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paymentsList.map((payment) => (
-                <MemberReceiptCard key={payment.id} payment={payment} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-48 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-              <p>No payment receipts available yet. Add a new payment above!</p>
+          {(role === "RESIDENT" || role === "ADMIN") && (
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-5">
+                Record New Payment
+              </h3>
+              <AddPaymentForm
+                onSubmit={handleAddPayment}
+                showMessage={showMessage}
+                userEmail={user?.primaryEmailAddress?.emailAddress}
+              />
             </div>
           )}
-        </div>
 
+          {/* Only ADMIN or SUPER_ADMIN can log new expenses */}
+          <RoleGuard roles={["SOCIETY_ADMIN", "SUPER_ADMIN"]} userRole={role}>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-5">
+                Log New Expense
+              </h3>
+              <AddExpenseForm
+                onSubmit={handleAddExpense}
+                showMessage={showMessage}
+                userEmail={user?.primaryEmailAddress?.emailAddress}
+              />
+            </div>
+          </RoleGuard>
+        </div>
+        {/* Member Receipts Section */}
+        {role !== "VISITOR" && (
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800">
+              Member Payment Receipts
+            </h2>
+            <p className="text-gray-600 max-w-2xl">
+              View and download payment receipts for members. This section
+              automatically updates with new payments.
+            </p>
+            {paymentsList.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paymentsList.map((payment) => (
+                  <MemberReceiptCard key={payment.id} payment={payment} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-48 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <p>
+                  No payment receipts available yet. Add a new payment above!
+                </p>
+              </div>
+            )}
+          </div>
+        )}
         {/* Back to Dashboard Link */}
         <div className="text-center mt-10">
           <Link

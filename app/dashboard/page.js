@@ -11,18 +11,17 @@ import DashboardStaff from "../../components/dashboard/DashboardStaff";
 import DashboardTechnician from "../../components/dashboard/DashboardTechnician";
 import DashboardDefault from "../../components/dashboard/DashboardDefault";
 
-const sampleNotices = [
-  "Water supply will be off from 2 PM to 5 PM.",
-  "Maintenance charges due by 30th May.",
-  "Annual General Meeting on 15th June at 5 PM.",
-  "New security staff onboarding tomorrow.",
-];
+
 
 
 export default function Dashboard() {
   const [role, setRole] = useState("VISITOR");
   const [userFirstName, setUserFirstName] = useState("");
+  const [societyId, setSocietyId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [marqueeNotices, setMarqueeNotices] = useState([]);
+  const [newNotice, setNewNotice] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   //fetch user details from api/users/me
   useEffect(() => {
@@ -36,6 +35,16 @@ export default function Dashboard() {
         const data = await res.json();
         setRole(data.role);
         setUserFirstName(data.firstName || data.name || "User");
+
+        setIsAdmin(["SUPER_ADMIN", "SOCIETY_SECRETARY"].includes(data.role));
+        setSocietyId(data.societyId);
+
+        if (data.societyId) {
+          const noticeRes = await fetch(`/api/marquee?societyId=${data.societyId}`);
+          const notices = await noticeRes.json();
+          setMarqueeNotices(notices);
+        }
+
       } catch (error) {
         console.error("Error fetching user details:", error);
       } finally {
@@ -44,6 +53,9 @@ export default function Dashboard() {
     }
     fetchUserDetails();
   }, []);
+
+
+
 
   if (loading) {
     return (
@@ -88,10 +100,49 @@ export default function Dashboard() {
         Welcome, <span className="text-blue-700">{userFirstName}</span>!
       </h1>
 
+      {/* ✅ Marquee Section */}
       <div className="bg-blue-200 rounded-md text-blue-900 p-3 mb-6 text-sm font-medium shadow-sm">
         <marquee behavior="scroll" direction="left" scrollamount="4">
-          {sampleNotices.join(" ❘ ")} {/* vertical bar separator */}
+          {marqueeNotices.map((n) => n.content).join(" ❘ ")}
         </marquee>
+
+        {isAdmin && (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newNotice.trim()) return;
+
+              const res = await fetch("/api/marquee", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: newNotice, societyId }),
+              });
+
+              if (res.ok) {
+                const added = await res.json();
+                setMarqueeNotices((prev) => [added, ...prev]);
+                setNewNotice("");
+              } else {
+                throw new Error("error occured");
+              }
+            }}
+            className="mt-4 flex gap-2"
+          >
+            <input
+              type="text"
+              value={newNotice}
+              onChange={(e) => setNewNotice(e.target.value)}
+              className="flex-1 px-3 py-1 rounded border border-blue-300"
+              placeholder="Add new marquee notice"
+            />
+            <button
+              type="submit"
+              className="bg-blue-700 text-white px-4 py-1 rounded hover:bg-blue-800"
+            >
+              Add
+            </button>
+          </form>
+        )}
       </div>
 
       {/* Quick Access Section */}

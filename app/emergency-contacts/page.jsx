@@ -10,6 +10,7 @@ export default function EmergencyContactsPage() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [designation, setDesignation] = useState('')
   const [email, setEmail] = useState('')
+  const [userData, setUserData] = useState(null)
   const { user } = useUser()
 
   useEffect(() => {
@@ -18,7 +19,8 @@ export default function EmergencyContactsPage() {
         const res = await fetch('/api/emergency-contacts')
         if (!res.ok) throw new Error(await res.text())
         const data = await res.json()
-        setContacts(Array.isArray(data) ? data : [])
+        setContacts(Array.isArray(data.contacts) ? data.contacts : [])
+        setUserData(data.user) // contains role and societyId
       } catch (error) {
         console.error('Fetch error:', error.message)
         setContacts([])
@@ -28,10 +30,12 @@ export default function EmergencyContactsPage() {
     fetchContacts()
   }, [])
 
+  const isAdmin = userData?.role === 'SOCIETY_ADMIN' || userData?.role === 'SUPER_ADMIN' || userData?.role === 'SOCIETY_SECRETARY'
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!user) {
-      alert('User not logged in')
+    if (!user || !isAdmin) {
+      alert('You are not authorized to add contacts')
       return
     }
 
@@ -44,7 +48,6 @@ export default function EmergencyContactsPage() {
           phoneNumber,
           email,
           designation,
-          userId: user.id,
         }),
       })
 
@@ -69,49 +72,51 @@ export default function EmergencyContactsPage() {
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4 text-center">Emergency & Community Contacts</h1>
 
-      <div className="bg-gray-100 p-4 rounded-xl shadow mb-6">
-        <h2 className="font-semibold mb-2">Add New Contact</h2>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="w-full p-2 border rounded"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Phone Number"
-            className="w-full p-2 border rounded"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-2 border rounded"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Designation (e.g. Electrician)"
-            className="w-full p-2 border rounded"
-            value={designation}
-            onChange={(e) => setDesignation(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
-          >
-            Save Contact
-          </button>
-        </form>
-      </div>
+      {isAdmin && (
+        <div className="bg-gray-100 p-4 rounded-xl shadow mb-6">
+          <h2 className="font-semibold mb-2">Add New Contact</h2>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <input
+              type="text"
+              placeholder="Full Name"
+              className="w-full p-2 border rounded"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Phone Number"
+              className="w-full p-2 border rounded"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              required
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full p-2 border rounded"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Designation (e.g. Electrician)"
+              className="w-full p-2 border rounded"
+              value={designation}
+              onChange={(e) => setDesignation(e.target.value)}
+              required
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+            >
+              Save Contact
+            </button>
+          </form>
+        </div>
+      )}
 
       <div>
         <h2 className="font-semibold mb-3">All Contacts</h2>
