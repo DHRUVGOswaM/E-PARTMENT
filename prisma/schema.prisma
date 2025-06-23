@@ -415,6 +415,13 @@ model Shift {
   staff     Staff    @relation(fields: [staffId], references: [id])
 }
 
+model ShiftTask {
+  id         String   @id @default(uuid())
+  staffName  String
+  shiftTime  String
+  task       String
+  createdAt  DateTime @default(now())
+}
 
 model MarqueeNotice {
   id         String   @id @default(cuid())

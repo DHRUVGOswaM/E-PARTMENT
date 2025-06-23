@@ -9,6 +9,11 @@ import {
   AlertTriangle,
   FileText,
   House,
+  UserPlus,
+  CalendarCheck,
+  Clock,
+  ClipboardCheck,
+  FileSignature,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -19,29 +24,45 @@ const features = [
     href: "/dashboard/society-admin/apartments",
   },
   {
-    title: "Manage Flats",
-    icon: <Building2 className="h-8 w-8" />,
-    href: "/dashboard/society-admin/flats",
-  },
-  {
-    title: "Assign Flats to Residents",
+    title: "Access Requests",
     icon: <Users className="h-8 w-8" />,
-    href: "/dashboard/society-admin/assign-flats",
+    href: "/dashboard/society-admin/access-requests",
   },
   {
     title: "Emergency Contacts",
     icon: <AlertTriangle className="h-8 w-8" />,
-    href: "/dashboard/society-admin/emergency-contacts",
+    href: "../../emergency-contacts",
   },
   {
     title: "Complaints",
     icon: <ClipboardList className="h-8 w-8" />,
-    href: "/dashboard/society-admin/complaints",
+    href: "/dashboard/secretary/complaints",
+  },
+  // ───── Staff Management Features ─────
+  {
+    title: "Add New Staff",
+    icon: <UserPlus className="h-8 w-8" />,
+    href: "/staff-management/add-staff",
   },
   {
-    title: "Notices & Documents",
-    icon: <FileText className="h-8 w-8" />,
-    href: "/dashboard/society-admin/notices",
+    title: "Manage Leave Requests",
+    icon: <CalendarCheck className="h-8 w-8" />,
+    href: "/staff-management/leave-requests",
+  },
+  {
+    title: "Assign Shifts",
+    icon: <Clock className="h-8 w-8" />,
+    href: "/staff-management/assign-shift",
+  },
+  {
+    title: "Assign Tasks",
+    icon: <ClipboardCheck className="h-8 w-8" />,
+    href: "/staff-management/assign-task",
+  },
+  {
+    title: "Upload Salary Slips",
+    icon: <FileSignature className="h-8 w-8" />,
+    href: "/staff-management/upload-salary-slip",
   },
 ];
 
