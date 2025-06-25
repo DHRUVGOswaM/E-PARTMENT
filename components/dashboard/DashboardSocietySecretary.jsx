@@ -89,7 +89,7 @@ export default function DashboardSocietySecretary() {
         />
       </Link>
 
-      <Link href="/staff-management/assign-shift">
+      <Link href="/staff-management/assign">
         <Section
           title="Assign Shift"
           description="Allocate shift timings to staff."

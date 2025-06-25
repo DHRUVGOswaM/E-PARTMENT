@@ -40,14 +40,14 @@ export default function StaffHome() {
                 View Salary
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 className="text-blue-600 hover:underline"
                 href="/staff/emergency-salary"
               >
                 Emergency Salary Request
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link
                 className="text-blue-600 hover:underline"
