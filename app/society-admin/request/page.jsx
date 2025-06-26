@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Script from "next/script";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "react-hot-toast";
 import { Label } from "@/components/ui/label";
 
+/* ----------------  CONFIG  ---------------- */
+const SUBSCRIPTION_FEE = 999; // ₹ 999 -- change anytime
+
 export default function AdminRequestForm() {
+  /* user info pre-fill -------------------- */
+  const [user, setUser] = useState(null);
   const [form, setForm] = useState({
     apartmentName: "",
     totalFlats: "",
@@ -15,111 +23,136 @@ export default function AdminRequestForm() {
     phoneNumber: "",
   });
 
-  const [user, setUser] = useState(null);
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
+  /* fetch logged-in user once -------------- */
   useEffect(() => {
-    const fetchUser = async () => { 
+    (async () => {
       try {
         const res = await fetch("/api/users/me");
         if (!res.ok) throw new Error("User fetch failed");
         const data = await res.json();
-          setUser(data);
-          console.log("User data:", data);
-        setForm((prev) => ({
-          ...prev,
-          name: data.firstName + " " + data.lastName,
+        setUser(data);
+        setForm((p) => ({
+          ...p,
+          name: `${data.firstName} ${data.lastName}`,
           email: data.email,
           phoneNumber: data.phoneNumber || "",
         }));
-      } catch (err) {
-        toast.error("Failed to load user data");
+      } catch {
+        toast.error("Failed to load user");
       }
-    };
-    fetchUser();
+    })();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
+  /* generic change handler ----------------- */
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async () => {
+  /* ------------ PAY & SUBMIT -------------- */
+  const payAndSubmit = async () => {
+    /* naïve validation */
+    if (!form.apartmentName || !form.address || !form.phoneNumber) {
+      toast.error("Fill all required fields");
+      return;
+    }
+    setLoading(true);
+
     try {
-      const res = await fetch("/api/society-admin/request", {
+      /* 1️⃣  create Razorpay order on server */
+      const orderRes = await fetch("/api/payments/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ amount: SUBSCRIPTION_FEE }),
+      });
+      if (!orderRes.ok) throw new Error("Order create failed");
+      const order = await orderRes.json();
+
+      /* 2️⃣  open Razorpay checkout */
+      // @ts-ignore (checkout.js injected below)
+      const razorpay = new window.Razorpay({
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        order_id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        name: "E-Partment",
+        description: "Society subscription",
+        prefill: { contact: form.phoneNumber, email: user?.email },
+        handler: async (resp) => {
+          /* 3️⃣  verify & create PendingAdmin */
+          const verify = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...resp,
+              formData: form, // apartment, flats, etc.
+            }),
+          });
+          if (verify.ok) {
+            toast.success("Payment successful – request submitted!");
+            router.push("/dashboard");
+          } else {
+            toast.error("Verification failed – contact support");
+          }
+          setLoading(false);
+        },
+        modal: { ondismiss: () => setLoading(false) },
+        theme: { color: "#0d9488" },
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(" Admin request submitted. Wait for approval.");
-      } else {
-        toast.error(data.error || "❌ Something went wrong.");
-      }
+      razorpay.open();
     } catch (err) {
-      toast.error("❌ Request failed.");
+      toast.error(err.message || "Error starting payment");
+      setLoading(false);
     }
   };
 
+  /* ------------- UI ----------------------- */
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">🏢 Request Admin Access</h1>
-      {user && (
-        <p className="text-gray-600 text-center">Welcome, {user.firstName}!</p>
-      )}
-      <div className="text-center"> Currently your role is : {user?.role} </div>
-      <div className="grid gap-4">
-        <div>
-          <Label htmlFor="apartmentName">Society / Apartment Name</Label>
-          <Input
-            name="apartmentName"
-            value={form.apartmentName}
-            onChange={handleChange}
-          />
+    <>
+      {/* Razorpay script (loads once) */}
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+
+      <div className="max-w-xl mx-auto p-6 space-y-6">
+        <h1 className="text-2xl font-bold">🏢 Request Admin Access</h1>
+
+        {user && (
+          <>
+            <p className="text-gray-600 text-center">
+              Welcome, {user.firstName}!
+            </p>
+            <div className="text-center mb-4">
+              Current role:&nbsp;<b>{user.role}</b>
+            </div>
+          </>
+        )}
+
+        <div className="grid gap-4">
+          {[
+            { name: "apartmentName", label: "Society / Apartment Name" },
+            { name: "address", label: "Address" },
+            { name: "phoneNumber", label: "Phone Number", type: "tel" },
+            { name: "registrationNumber", label: "Registration Number" },
+            { name: "totalFlats", label: "Total Flats", type: "number" },
+          ].map((f) => (
+            <div key={f.name}>
+              <Label htmlFor={f.name}>{f.label}</Label>
+              <Input
+                id={f.name}
+                name={f.name}
+                type={f.type || "text"}
+                value={form[f.name]}
+                onChange={handleChange}
+              />
+            </div>
+          ))}
         </div>
 
-        <div>
-          <Label htmlFor="address">Address</Label>
-          <Input name="address" value={form.address} onChange={handleChange} />
-        </div>
-
-        <div>
-          <Label htmlFor="phoneNumber">Phone Number</Label>
-          <Input
-            name="phoneNumber"
-            placeholder="Enter your phone number"
-            type="tel"
-            pattern="[0-9]{10}"
-            value={form.phoneNumber}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="registrationNumber">Registration Number</Label>
-          <Input
-            name="registrationNumber"
-            value={form.registrationNumber}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="totalFlats">Total Flats</Label>
-          <Input
-            name="totalFlats"
-            type="number"
-            value={form.totalFlats}
-            onChange={handleChange}
-          />
-        </div>
+        <Button onClick={payAndSubmit} disabled={loading}>
+          {loading ? "Redirecting…" : `Pay ₹${SUBSCRIPTION_FEE} & Submit`}
+        </Button>
       </div>
-
-      <Button onClick={handleSubmit} className="mt-4">
-        Submit Request
-      </Button>
-    </div>
+    </>
   );
 }

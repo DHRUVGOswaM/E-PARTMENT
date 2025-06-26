@@ -40,7 +40,8 @@ model User {
   society          Society?           @relation(fields: [societyId], references: [id])
   visitors         Visitor[]          @relation("PreApprovedBy")
   feedbacks        Feedback[]
-  staff            Staff[]            
+  staff            Staff[]     
+  paymentLogs      PaymentLog[]       
 
   @@map("users")
 }
@@ -294,6 +295,7 @@ model PendingAdmin {
   address            String
   registrationNumber String
   phoneNumber        String
+  paymentLog      PaymentLog[] 
 
   @@map("pending_admins")
 }
@@ -316,6 +318,7 @@ model PendingAccess {
   @@map("pending_access")
 }
 
+// TRANSACTIONS///
 model Transaction {
   id              String          @id @default(uuid())
   amount          Float
@@ -323,20 +326,75 @@ model Transaction {
   category        String?
   description     String?
   transactionDate DateTime        @map("transaction_date")
-  paymentMethod   String?         @map("payment_method")
+  paymentMethod   PaymentMethod?   @map("payment_method")
+
+  // Optional details based on payment method
+  bankName        String?         @map("bank_name")
+  ifscCode        String?         @map("ifsc_code")
+  transactionId   String?         @map("transaction_id")
+  upiId           String?         @map("upi_id")
+  chequeNumber    String?         @map("cheque_number")
+
+  // INCOME-specific fields
   payerName       String?         @map("payer_name")
   flatNumber      String?         @map("flat_number")
   forMonth        String?         @map("for_month")
   paidStatus      Boolean?        @default(true) @map("paid_status")
+
+  flatId          String?
+  flat            Flat?           @relation("FlatTransactions", fields: [flatId], references: [id])
+
+  recorderId      String          @map("recorder_id")
+  recorder        User            @relation("TransactionRecorder", fields: [recorderId], references: [id])
+
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
-  flatId          String?
-  recorderId      String          @map("recorder_id")
-  flat            Flat?           @relation("FlatTransactions", fields: [flatId], references: [id])
-  recorder        User            @relation("TransactionRecorder", fields: [recorderId], references: [id])
 
   @@map("transactions")
 }
+
+
+model PaymentLog {
+  id            String   @id @default(cuid())
+
+  /** Razorpay’s order_id  — returned from /v1/orders      */
+  rzOrderId     String   @unique @map("rz_order_id")
+
+  /** Razorpay’s payment_id — sent back in the checkout callback */
+  rzPaymentId   String?  @unique @map("rz_payment_id")
+
+  /** HMAC signature we verify on the backend                */
+  rzSignature   String?  @map("rz_signature")
+
+  /** CREATED  →  PAID  →  FAILED / REFUNDED … */
+  status        PaymentStatus  @default(CREATED)
+
+  /** Amount in paise (₹99.00 == 9900) to match Razorpay */
+  amount        Int
+
+  /** Human readable ₹ value (redundant but handy in dashboards) */
+  amountDisplay String  @map("amount_display")
+
+  /** Friendly label — “Society Subscription”, “Maintenance 2025-02” … */
+  purpose       String
+
+  /** Links to the user who paid (Clerk ID stored in `userId`) */
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  /** Optional link to the PendingAdmin request you create right after payment */
+  pendingAdminId String?         @map("pending_admin_id")
+  pendingAdmin   PendingAdmin?   @relation(fields: [pendingAdminId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("payment_logs")
+  @@index([userId])
+  @@index([pendingAdminId])
+}
+
+
 
 model Staff {
   id         String       @id @default(cuid())
@@ -492,4 +550,20 @@ enum AdminRequestStatus {
 enum TransactionType {
   INCOME
   EXPENSE
+}
+
+
+/// Very small enum that mirrors the lifecycle you care about
+enum PaymentStatus {
+  CREATED   // order generated – awaiting checkout
+  PAID      // payment verified
+  FAILED    // payment failed / signature mismatch
+  REFUNDED  // optional future use
+}
+enum PaymentMethod {
+  CASH
+  UPI
+  CHEQUE
+  BANK_TRANSFER
+  ONLINE_PAYMENT
 }
