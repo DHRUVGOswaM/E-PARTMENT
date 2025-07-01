@@ -40,29 +40,49 @@ model User {
   society          Society?           @relation(fields: [societyId], references: [id])
   visitors         Visitor[]          @relation("PreApprovedBy")
   feedbacks        Feedback[]
-  staff            Staff[]     
-  paymentLogs      PaymentLog[]       
+  staff            Staff[]
+  paymentLogs      PaymentLog[]
 
   @@map("users")
 }
 
 model Society {
-  id                 String          @id @default(cuid())
+  id                 String             @id @default(cuid())
   name               String
   address            String
   registrationNumber String
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  qrImageUrl         String?            @map("qr_image_url")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
   buildings          Building[]
   notices            Notice[]
   pendingAccess      PendingAccess[]
   societyAdmins      SocietyAdmin[]
   users              User[]
-  marqueeNotices    MarqueeNotice[]
-  emergencyContacts EmergencyContact[]
-  staff            Staff[]
+  marqueeNotices     MarqueeNotice[]
+  emergencyContacts  EmergencyContact[]
+  staff              Staff[]
+  paymentQR          PaymentQR[]
 
   @@map("societies")
+}
+
+/// One QR-code “invoice” per society expense (maintenance, sinking-fund …)
+model PaymentQR {
+  id        String  @id @default(cuid())
+  societyId String
+  amount    Float // 999.00
+  purpose   String // “Maintenance – June 2025”
+  qrString  String // UPI intent / Razorpay QR payload
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  society Society @relation(fields: [societyId], references: [id])
+
+  @@index([societyId])
+  @@map("payment_qr")
 }
 
 model SocietyAdmin {
@@ -276,7 +296,7 @@ model EmergencyContact {
   updatedAt   DateTime @updatedAt
   email       String
   designation String
-  societyId    String
+  societyId   String
   society     Society  @relation(fields: [societyId], references: [id])
   user        User     @relation(fields: [userId], references: [id])
 
@@ -295,7 +315,7 @@ model PendingAdmin {
   address            String
   registrationNumber String
   phoneNumber        String
-  paymentLog      PaymentLog[] 
+  paymentLog         PaymentLog[]
 
   @@map("pending_admins")
 }
@@ -326,92 +346,107 @@ model Transaction {
   category        String?
   description     String?
   transactionDate DateTime        @map("transaction_date")
-  paymentMethod   PaymentMethod?   @map("payment_method")
+  paymentMethod   PaymentMethod?  @map("payment_method")
 
   // Optional details based on payment method
-  bankName        String?         @map("bank_name")
-  ifscCode        String?         @map("ifsc_code")
-  transactionId   String?         @map("transaction_id")
-  upiId           String?         @map("upi_id")
-  chequeNumber    String?         @map("cheque_number")
+  bankName      String? @map("bank_name")
+  ifscCode      String? @map("ifsc_code")
+  transactionId String? @map("transaction_id")
+  upiId         String? @map("upi_id")
+  chequeNumber  String? @map("cheque_number")
 
   // INCOME-specific fields
-  payerName       String?         @map("payer_name")
-  flatNumber      String?         @map("flat_number")
-  forMonth        String?         @map("for_month")
-  paidStatus      Boolean?        @default(true) @map("paid_status")
+  payerName  String?  @map("payer_name")
+  flatNumber String?  @map("flat_number")
+  forMonth   String?  @map("for_month")
+  paidStatus Boolean? @default(true) @map("paid_status")
 
-  flatId          String?
-  flat            Flat?           @relation("FlatTransactions", fields: [flatId], references: [id])
+  flatId String?
+  flat   Flat?   @relation("FlatTransactions", fields: [flatId], references: [id])
 
-  recorderId      String          @map("recorder_id")
-  recorder        User            @relation("TransactionRecorder", fields: [recorderId], references: [id])
+  recorderId String @map("recorder_id")
+  recorder   User   @relation("TransactionRecorder", fields: [recorderId], references: [id])
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("transactions")
 }
 
-
 model PaymentLog {
-  id            String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  /** Razorpay’s order_id  — returned from /v1/orders      */
-  rzOrderId     String   @unique @map("rz_order_id")
+  /**
+   * Razorpay’s order_id  — returned from /v1/orders
+   */
+  rzOrderId String @unique @map("rz_order_id")
 
-  /** Razorpay’s payment_id — sent back in the checkout callback */
-  rzPaymentId   String?  @unique @map("rz_payment_id")
+  /**
+   * Razorpay’s payment_id — sent back in the checkout callback
+   */
+  rzPaymentId String? @unique @map("rz_payment_id")
 
-  /** HMAC signature we verify on the backend                */
-  rzSignature   String?  @map("rz_signature")
+  /**
+   * HMAC signature we verify on the backend
+   */
+  rzSignature String? @map("rz_signature")
 
-  /** CREATED  →  PAID  →  FAILED / REFUNDED … */
-  status        PaymentStatus  @default(CREATED)
+  /**
+   * CREATED  →  PAID  →  FAILED / REFUNDED …
+   */
+  status PaymentStatus @default(CREATED)
 
-  /** Amount in paise (₹99.00 == 9900) to match Razorpay */
-  amount        Int
+  /**
+   * Amount in paise (₹99.00 == 9900) to match Razorpay
+   */
+  amount Int
 
-  /** Human readable ₹ value (redundant but handy in dashboards) */
-  amountDisplay String  @map("amount_display")
+  /**
+   * Human readable ₹ value (redundant but handy in dashboards)
+   */
+  amountDisplay String @map("amount_display")
 
-  /** Friendly label — “Society Subscription”, “Maintenance 2025-02” … */
-  purpose       String
+  /**
+   * Friendly label — “Society Subscription”, “Maintenance 2025-02” …
+   */
+  purpose String
 
-  /** Links to the user who paid (Clerk ID stored in `userId`) */
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
+  /**
+   * Links to the user who paid (Clerk ID stored in `userId`)
+   */
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  /** Optional link to the PendingAdmin request you create right after payment */
-  pendingAdminId String?         @map("pending_admin_id")
-  pendingAdmin   PendingAdmin?   @relation(fields: [pendingAdminId], references: [id])
+  /**
+   * Optional link to the PendingAdmin request you create right after payment
+   */
+  pendingAdminId String?       @map("pending_admin_id")
+  pendingAdmin   PendingAdmin? @relation(fields: [pendingAdminId], references: [id])
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@map("payment_logs")
   @@index([userId])
   @@index([pendingAdminId])
+  @@map("payment_logs")
 }
 
-
-
 model Staff {
-  id         String       @id @default(cuid())
-  name       String
-  role       String
-  salary     Int
-  Attendance Attendance[]
-  leave      Leave[]
-  Salary     Salary[]
-  shift      Shift[]
+  id           String         @id @default(cuid())
+  name         String
+  role         String
+  salary       Int
+  Attendance   Attendance[]
+  leave        Leave[]
+  Salary       Salary[]
+  shift        Shift[]
   leaveRequest leaveRequest[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  societyId  String
-  society    Society      @relation(fields: [societyId], references: [id])
-  userId     String
-  user       User        @relation(fields: [userId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  societyId    String
+  society      Society        @relation(fields: [societyId], references: [id])
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
 }
 
 model Attendance {
@@ -474,20 +509,20 @@ model Shift {
 }
 
 model ShiftTask {
-  id         String   @id @default(uuid())
-  staffName  String
-  shiftTime  String
-  task       String
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  staffName String
+  shiftTime String
+  task      String
+  createdAt DateTime @default(now())
 }
 
 model MarqueeNotice {
-  id         String   @id @default(cuid())
-  content    String
-  societyId  String
-  society    Society  @relation(fields: [societyId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  content   String
+  societyId String
+  society   Society  @relation(fields: [societyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum ComplaintType {
@@ -552,14 +587,14 @@ enum TransactionType {
   EXPENSE
 }
 
-
 /// Very small enum that mirrors the lifecycle you care about
 enum PaymentStatus {
-  CREATED   // order generated – awaiting checkout
-  PAID      // payment verified
-  FAILED    // payment failed / signature mismatch
-  REFUNDED  // optional future use
+  CREATED // order generated – awaiting checkout
+  PAID // payment verified
+  FAILED // payment failed / signature mismatch
+  REFUNDED // optional future use
 }
+
 enum PaymentMethod {
   CASH
   UPI

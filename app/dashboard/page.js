@@ -36,7 +36,7 @@ export default function Dashboard() {
         setRole(data.role);
         setUserFirstName(data.firstName || data.name || "User");
 
-        setIsAdmin(["SUPER_ADMIN", "SOCIETY_SECRETARY"].includes(data.role));
+        setIsAdmin(["SUPER_ADMIN", "SOCIETY_SECRETARY", "SOCIETY_ADMIN"].includes(data.role));
         setSocietyId(data.societyId);
 
         if (data.societyId) {
@@ -103,7 +103,9 @@ export default function Dashboard() {
       {/* ✅ Marquee Section */}
       <div className="bg-blue-200 rounded-md text-blue-900 p-3 mb-6 text-sm font-medium shadow-sm">
         <marquee behavior="scroll" direction="left" scrollamount="4">
-          {marqueeNotices.map((n) => n.content).join(" ❘ ")}
+          <span className="text-red-700 text-lg md:text-xl font-bold">
+            {marqueeNotices.map((n) => n.content).join(" ❘ ")}
+          </span>
         </marquee>
 
         {isAdmin && (

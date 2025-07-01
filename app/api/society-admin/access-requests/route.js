@@ -11,7 +11,7 @@ export async function GET() {
     where: { user: { clerkUserId: userId } },
     include: { society: true },
   });
-  if (!meAdmin) return new NextResponse("Forbidden", { status: 403 });
+  if (!meAdmin) return new NextResponse("Forbidden", { status: 40 });
 
   const requests = await db.pendingAccess.findMany({
     where: { societyId: meAdmin.societyId, status: "PENDING" },

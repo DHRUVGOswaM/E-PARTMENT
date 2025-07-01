@@ -25,17 +25,25 @@ export default function DashboardSocietySecretary() {
   return (
     <>
       {/* --- Secretary Features --- */}
-      <Link href="/visitors">
+      <Link href="/allVisitor">
         <Section
           title="Visitor Management"
           description="Manage visitor entries and approvals."
         />
       </Link>
 
-      <Link href="/billing">
+      <Link href="/Accounting">
         <Section
           title="Payment Reports"
           description="Access and export billing details."
+        />
+      </Link>
+
+
+      <Link href="/dashboard/society-admin/upload-qr">
+        <Section
+          title="Upload Society QR"
+          description="Upload UPI QR code for payments."
         />
       </Link>
 

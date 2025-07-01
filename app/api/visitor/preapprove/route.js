@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req) {
   try {
+    const { userId } = await auth();
     const body = await req.json();
     const {
       visitorName,
@@ -16,28 +18,22 @@ export async function POST(req) {
     } = body;
 
     // Find the flat and resident user by flat number and resident name
-    const flat = await db.flat.findFirst({
+    const user = await db.user.findUnique({
       where: {
-        flatNumber,
-        resident: {
-          OR: [
-            { name: residentName },
-            { firstName: residentName },
-            { lastName: residentName },
-          ],
-        },
-      },
-      include: {
-        resident: true,
+        clerkUserId: userId,
       },
     });
 
-    if (!flat || !flat.resident) {
-      return NextResponse.json(
-        { error: "Resident or flat not found." },
-        { status: 404 }
-      );
-    }
+    console.log("User:", user);
+
+    const flat = await db.flat.findMany({
+      where: {
+        ownerId: user.id,
+      }
+    })
+    console.log("Flat:", flat);
+
+    
 
     // Generate QR code token
     const qrCodeToken = nanoid(32);
@@ -49,8 +45,8 @@ export async function POST(req) {
         phoneNumber,
         vehicleNumber: vehicleNumber || null,
         purpose,
-        visitingFlatId: flat.id,
-        preApprovedByUserId: flat.resident.id,
+        visitingFlatId: flat[0].id,
+        preApprovedByUserId: flat[0].ownerId,
         status: "PENDING",
         qrCodeToken,
         imageUrl: imageUrl || null,

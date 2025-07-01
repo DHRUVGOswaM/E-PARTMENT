@@ -42,12 +42,12 @@ const DashboardHouseOwner = () => {
             description="Add a new visitor and Share the QR code with your visitor."
           />
         </Link>
-        {/* <Link href="/polls">
+        <Link href="/pay-with-qr">
         <Section
-          title="Polls & Voting"
-          description="Participate in ongoing polls."
+          title="Pay with UPI QR for Dues"
+          description="Scan the UPI QR code to pay your dues and maintainence fees."
         />
-      </Link> */}
+      </Link>
     </>
   );
 }

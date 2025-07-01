@@ -2,7 +2,7 @@ import QRCodeDisplay from "@/components/QRCodeDisplay";
 import { db } from "@/lib/prisma";
 
 export default async function VisitorPage({ params }) {
-  let ID =  params.id;
+  let ID = await params.id;
   if (!ID) {
     return <div className="text-red-500 p-4 text-center">Visitor ID is required</div>;
   }

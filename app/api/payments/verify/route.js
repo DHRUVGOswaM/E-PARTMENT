@@ -6,11 +6,9 @@ import { auth } from "@clerk/nextjs/server";
 export async function POST(req) {
   try {
     const { userId } = await auth();
-    console.log("[AUTH] User ID:", userId);
     if (!userId) return new NextResponse("Unauthorised", { status: 401 });
 
     const payload = await req.json();
-    console.log("[REQ] Payload received:", payload);
 
     const {
       razorpay_order_id,
@@ -31,8 +29,6 @@ export async function POST(req) {
       .update(body)
       .digest("hex");
 
-    console.log("[VERIFY] Expected HMAC:", expected);
-    console.log("[VERIFY] Received Signature:", razorpay_signature);
 
     if (expected !== razorpay_signature) {
       console.error("[VERIFY] Signature mismatch");
@@ -40,7 +36,6 @@ export async function POST(req) {
     }
 
     /* ----- mark payment SUCCESS ----- */
-    console.log("[DB] Updating paymentLog for rzOrderId:", razorpay_order_id);
     const log = await db.paymentLog.update({
       where: { rzOrderId: razorpay_order_id },
       data: {
@@ -50,10 +45,8 @@ export async function POST(req) {
       },
     });
 
-    console.log("[DB] PaymentLog updated:", log);
 
     /* ----- create PendingAdmin row (linked) ----- */
-    console.log("[DB] Upserting PendingAdmin for:", formData?.email);
     const pending = await db.pendingAdmin.upsert({
       where: { email: formData.email },
       create: {
@@ -77,7 +70,6 @@ export async function POST(req) {
       },
     });
 
-    console.log("[DB] PendingAdmin upserted:", pending);
 
     return NextResponse.json({ ok: true, pendingId: pending.id });
   } catch (error) {
