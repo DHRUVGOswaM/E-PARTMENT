@@ -9,6 +9,9 @@ import React, { useState, useEffect, useRef, useCallback, use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import RoleGuard from '@/components/RoleGuard';
+import domtoimage from "dom-to-image-more";
+import { jsPDF } from "jspdf";
+
 
 // Clerk client-side hooks for authentication status and user details
 import { useAuth, useUser } from '@clerk/nextjs';
@@ -65,43 +68,82 @@ const MessageModal = ({ message, type, onClose }) => {
   );
 };
 
-
 // --- Component: AddExpenseForm (Defined Locally) ---
-function AddExpenseForm({ onSubmit, showMessage, userEmail }) { // Added userEmail prop
+function AddExpenseForm({ onSubmit, showMessage, userEmail }) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [transactionDate, setTransactionDate] = useState(new Date().toISOString().slice(0, 10)); // Defaults to current date
-  const [paymentMethod, setPaymentMethod] = useState("Cash"); // Default payment method
+  const [transactionDate, setTransactionDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+
+  // Conditional fields
+  const [chequeNumber, setChequeNumber] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [transactionId, setTransactionId] = useState("");
+  const [ifscCode, setIfscCode] = useState("");
+  const [upiId, setUpiId] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Basic client-side validation
     if (!amount || !category || !description || !transactionDate || !paymentMethod) {
       showMessage("Please fill in all expense details.", "error");
       return;
     }
 
+    // Conditional validation
+    if (paymentMethod === "Cheque" && !chequeNumber) {
+      showMessage("Please enter cheque number.", "error");
+      return;
+    }
+    if (paymentMethod === "Bank Transfer" && !bankName) {
+      showMessage("Please enter bank name.", "error");
+      if (!ifscCode || !transactionId) {
+        showMessage("Please provide IFSC Code and Transaction ID for Bank Transfer.", "error");
+        return;
+      }
+    }
+    if (paymentMethod === "Online Payment" && !transactionId) {
+      showMessage("Please enter transaction ID.", "error");
+      return;
+    }
+    if (paymentMethod === "UPI" && !upiId && !transactionId) {
+      showMessage("Please enter UPI ID.", "error");
+      return;
+    }
+
     try {
-      // Call the onSubmit prop function with the form data
       await onSubmit({
-        amount: parseFloat(amount), // Convert amount to a number
+        amount: parseFloat(amount),
         category,
         description,
-        transactionDate, // Passed as string; API route will convert to Date object
+        transactionDate,
         paymentMethod,
-        type: "EXPENSE", // Matches Prisma's TransactionType enum
-        email: userEmail, // Pass user's email to the API route for potential User creation logic
+        chequeNumber: paymentMethod === "Cheque" ? chequeNumber : null,
+        bankName: paymentMethod === "Bank Transfer" ? bankName : null,
+        transactionId: paymentMethod === "Online Payment" ? transactionId : null,
+        transactionId: paymentMethod === "Bank Transfer" ? transactionId : null,
+        transactionId: paymentMethod === "UPI" ? transactionId : null,
+        ifscCode: paymentMethod === "Bank Transfer" ? ifscCode : null,
+        upiId: paymentMethod === "UPI" ? upiId : null,
+        type: "EXPENSE",
+        email: userEmail,
       });
+
       showMessage("Expense added successfully!", "success");
-      // Reset form fields to their initial empty states after successful submission
+
+      // Reset all fields
       setAmount("");
       setCategory("");
       setDescription("");
       setTransactionDate(new Date().toISOString().slice(0, 10));
       setPaymentMethod("Cash");
+      setChequeNumber("");
+      setBankName("");
+      setTransactionId("");
+      setIfscCode("");
+      setUpiId("");
     } catch (error) {
-      console.error("Error adding expense from form:", error);
+      console.error("Error adding expense:", error);
       showMessage("Failed to add expense. Please try again.", "error");
     }
   };
@@ -111,15 +153,23 @@ function AddExpenseForm({ onSubmit, showMessage, userEmail }) { // Added userEma
       <div>
         <label htmlFor="expense-amount" className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
         <input
-          id="expense-amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="e.g., 5000"
-          className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
-          required
-        />
+  id="amount"
+  type="text"
+  inputMode="numeric"
+  pattern="^\d+(\.\d{0,2})?$" // allows decimals up to 2 places
+  value={amount}
+  onChange={(e) => {
+    const value = e.target.value;
+    if (/^\d*\.?\d{0,2}$/.test(value)) {
+      setAmount(value);
+    }
+  }}
+  placeholder="e.g., 2500"
+  className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+  required
+/>
       </div>
+
       <div>
         <label htmlFor="expense-category" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
         <input
@@ -127,23 +177,12 @@ function AddExpenseForm({ onSubmit, showMessage, userEmail }) { // Added userEma
           type="text"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          placeholder="e.g., Electricity Bill, Repairs"
+          placeholder="e.g., Repairs, Electricity"
           className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
           required
         />
       </div>
-      <div>
-        <label htmlFor="expense-description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea
-          id="expense-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Brief description of the expense"
-          rows="2"
-          className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
-          required
-        ></textarea>
-      </div>
+
       <div>
         <label htmlFor="expense-date" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
         <input
@@ -155,6 +194,7 @@ function AddExpenseForm({ onSubmit, showMessage, userEmail }) { // Added userEma
           required
         />
       </div>
+
       <div>
         <label htmlFor="payment-method" className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
         <select
@@ -171,6 +211,110 @@ function AddExpenseForm({ onSubmit, showMessage, userEmail }) { // Added userEma
           <option value="UPI">UPI</option>
         </select>
       </div>
+
+      {paymentMethod === "Cheque" && (
+        <div>
+          <label htmlFor="cheque-number" className="block text-sm font-medium text-gray-700 mb-1">Cheque Number</label>
+          <input
+            id="cheque-number"
+            type="text"
+            value={chequeNumber}
+            onChange={(e) => setChequeNumber(e.target.value)}
+            placeholder="e.g., 123456"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+      )}
+
+      {paymentMethod === "Bank Transfer" && (
+        <div>
+          <label htmlFor="bank-name" className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+          <input
+            id="bank-name"
+            type="text"
+            value={bankName}
+            onChange={(e) => setBankName(e.target.value)}
+            placeholder="e.g., HDFC Bank"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+          <label htmlFor="ifsc-code-exp" className="block text-sm font-medium text-gray-700 mb-1">IFSC Code</label>
+          <input
+          id="ifsc-code-exp"
+          type="text"
+          value={ifscCode}
+          onChange={(e) => setIfscCode(e.target.value)}
+          placeholder="e.g., SBIN0001234"
+           className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+           required
+           />
+           <label htmlFor="txn-id-exp" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+           <input
+           id="txn-id-exp"
+            type="text"
+            value={transactionId}
+            onChange={(e) => setTransactionId(e.target.value)}
+             placeholder="e.g., TXN7859ABC"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+      />
+        </div>
+      )}
+
+      {paymentMethod === "Online Payment" && (
+        <div>
+          <label htmlFor="transaction-id" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+          <input
+            id="transaction-id"
+            type="text"
+            value={transactionId}
+            onChange={(e) => setTransactionId(e.target.value)}
+            placeholder="e.g., TXN987654"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+      )}
+
+      {paymentMethod === "UPI" && (
+        <div>
+          <label htmlFor="upi-id" className="block text-sm font-medium text-gray-700 mb-1">UPI ID</label>
+          <input
+            id="upi-id"
+            type="text"
+            value={upiId}
+            onChange={(e) => setUpiId(e.target.value)}
+            placeholder="e.g., name@upi"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+          <label htmlFor="txn-id-exp" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+           <input
+           id="txn-id-exp"
+            type="text"
+            value={transactionId}
+            onChange={(e) => setTransactionId(e.target.value)}
+             placeholder="e.g., TXN7859ABC"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+      />
+        </div>
+        
+      )}
+      <div>
+        <label htmlFor="expense-description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea
+          id="expense-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Brief description"
+          rows="2"
+          className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+          required
+        ></textarea>
+      </div>
+
       <button
         type="submit"
         className="bg-red-600 text-white px-5 py-2 rounded-full hover:bg-red-700 transition-colors shadow-md w-full sm:w-auto"
@@ -183,18 +327,50 @@ function AddExpenseForm({ onSubmit, showMessage, userEmail }) { // Added userEma
 
 
 // --- Component: AddPaymentForm (Defined Locally) ---
-function AddPaymentForm({ onSubmit, showMessage, userEmail }) { // Added userEmail prop
+function AddPaymentForm({ onSubmit, showMessage, userEmail }) {
   const [amount, setAmount] = useState("");
   const [payer, setPayer] = useState("");
   const [flat, setFlat] = useState("");
   const [month, setMonth] = useState("");
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [description, setDescription] = useState("");
+  // Conditional fields
+  const [chequeNumber, setChequeNumber] = useState(""); // Conditionally shown
+  const [bankName, setBankName] = useState(""); // Conditionally shown
+  const [transactionId, setTransactionId] = useState("");
+  const [ifscCode, setIfscCode] = useState("");
+  const [upiId, setUpiId] = useState("");
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!amount || !payer || !flat || !month || !transactionDate) {
+
+    if (!amount || !payer || !flat || !month || !transactionDate || !paymentMethod || !description) {
       showMessage("Please fill in all payment details.", "error");
       return;
+    }
+
+    if (paymentMethod === "Cheque" && !chequeNumber) {
+      showMessage("Please enter the cheque number.", "error");
+      return;
+    }
+
+    if (paymentMethod === "Bank Transfer" && !bankName) {
+      showMessage("Please enter the bank name.", "error");
+       if (!ifscCode || !transactionId) {
+    showMessage("Please provide IFSC Code and Transaction ID.", "error");
+    return;
+  }
+
+  if (paymentMethod === "UPI" && !upiId && !transactionId) {
+      showMessage("Please enter UPI ID.", "error");
+      return;
+    }
+     if (paymentMethod === "Online Payment" && !transactionId) {
+      showMessage("Please enter transaction ID.", "error");
+      return;
+    }
     }
 
     try {
@@ -204,16 +380,33 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) { // Added userEma
         flatNumber: flat,
         forMonth: month,
         transactionDate,
+        paymentMethod,
+        description,
+        chequeNumber: paymentMethod === "Cheque" ? chequeNumber : null,
+        bankName: paymentMethod === "Bank Transfer" ? bankName : null,
         paidStatus: true,
         type: "INCOME",
-        email: userEmail, // Pass user's email to the API route for potential User creation logic
+        email: userEmail,
+        ifscCode: paymentMethod === "Bank Transfer" ? ifscCode : null,
+        transactionId: paymentMethod === "Bank Transfer" ? transactionId : null,
+        upiId: paymentMethod === "UPI" ? upiId : null,
       });
+
       showMessage("Payment recorded successfully!", "success");
+
+      // Reset form
       setAmount("");
       setPayer("");
       setFlat("");
       setMonth("");
       setTransactionDate(new Date().toISOString().slice(0, 10));
+      setPaymentMethod("Cash");
+      setDescription("");
+      setChequeNumber("");
+      setBankName("");
+      setIfscCode("");
+      setTransactionId("");
+      setUpiId("");
     } catch (error) {
       console.error("Error recording payment from form:", error);
       showMessage("Failed to record payment. Please try again.", "error");
@@ -234,6 +427,7 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) { // Added userEma
           required
         />
       </div>
+
       <div>
         <label htmlFor="payer-name" className="block text-sm font-medium text-gray-700 mb-1">Payer Name</label>
         <input
@@ -246,6 +440,7 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) { // Added userEma
           required
         />
       </div>
+
       <div>
         <label htmlFor="payer-flat" className="block text-sm font-medium text-gray-700 mb-1">Flat Number</label>
         <input
@@ -253,11 +448,12 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) { // Added userEma
           type="text"
           value={flat}
           onChange={(e) => setFlat(e.target.value)}
-          placeholder="e.g., A-101, B-205"
+          placeholder="e.g., A-101"
           className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
           required
         />
       </div>
+
       <div>
         <label htmlFor="payment-month" className="block text-sm font-medium text-gray-700 mb-1">For Month</label>
         <input
@@ -270,6 +466,116 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) { // Added userEma
           required
         />
       </div>
+
+      <div>
+        <label htmlFor="payment-method" className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+        <select
+          id="payment-method"
+          value={paymentMethod}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+          required
+        >
+          <option value="Cash">Cash</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Cheque">Cheque</option>
+          <option value="Online Payment">Online Payment</option>
+          <option value="UPI">UPI</option>
+        </select>
+      </div>
+
+
+      {paymentMethod === "Bank Transfer" && (
+        <div>
+          <label htmlFor="bank-name" className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+          <input
+            id="bank-name"
+            type="text"
+            value={bankName}
+            onChange={(e) => setBankName(e.target.value)}
+            placeholder="e.g., HDFC Bank"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+          <label htmlFor="ifsc-code-exp" className="block text-sm font-medium text-gray-700 mb-1">IFSC Code</label>
+          <input
+          id="ifsc-code-exp"
+          type="text"
+          value={ifscCode}
+          onChange={(e) => setIfscCode(e.target.value)}
+          placeholder="e.g., SBIN0001234"
+           className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+           required
+           />
+           <label htmlFor="txn-id-exp" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+           <input
+           id="txn-id-exp"
+            type="text"
+            value={transactionId}
+            onChange={(e) => setTransactionId(e.target.value)}
+             placeholder="e.g., TXN7859ABC"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+                 />
+        </div>
+      )}
+
+      {paymentMethod === "UPI" && (
+        <div>
+          <label htmlFor="upi-id" className="block text-sm font-medium text-gray-700 mb-1">UPI ID</label>
+          <input
+            id="upi-id"
+            type="text"
+            value={upiId}
+            onChange={(e) => setUpiId(e.target.value)}
+            placeholder="e.g., name@upi"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+          <label htmlFor="transaction-id" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+          <input
+            id="transaction-id"
+            type="text"
+            value={transactionId}
+            onChange={(e) => setTransactionId(e.target.value)}
+            placeholder="e.g., TXN987654"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+        
+      )}
+
+      {paymentMethod === "Cheque" && (
+        <div>
+          <label htmlFor="cheque-number" className="block text-sm font-medium text-gray-700 mb-1">Cheque Number</label>
+          <input
+            id="cheque-number"
+            type="text"
+            value={chequeNumber}
+            onChange={(e) => setChequeNumber(e.target.value)}
+            placeholder="e.g., 123456"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+      )}
+       
+       {paymentMethod === "Online Payment" && (
+        <div>
+          <label htmlFor="transaction-id" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+          <input
+            id="transaction-id"
+            type="text"
+            value={transactionId}
+            onChange={(e) => setTransactionId(e.target.value)}
+            placeholder="e.g., TXN987654"
+            className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+      )}
+
       <div>
         <label htmlFor="payment-date" className="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
         <input
@@ -281,6 +587,20 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) { // Added userEma
           required
         />
       </div>
+       
+       <div>
+        <label htmlFor="payment-description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea
+          id="payment-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Optional note or comment"
+          rows="2"
+          className="border p-2 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+          required
+        ></textarea>
+      </div>
+
       <button
         type="submit"
         className="bg-green-600 text-white px-5 py-2 rounded-full hover:bg-green-700 transition-colors shadow-md w-full sm:w-auto"
@@ -292,6 +612,7 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) { // Added userEma
 }
 
 
+
 // --- Component: MemberReceiptCard (Defined Locally) ---
 function MemberReceiptCard({ payment }) {
   const receiptRef = useRef();
@@ -300,39 +621,85 @@ function MemberReceiptCard({ payment }) {
     if (!payment.paidStatus) return;
 
     const element = receiptRef.current;
-    setTimeout(async () => {
-        const canvas = await html2canvas(element, { scale: 2 });
-        const imgData = canvas.toDataURL("image/png");
 
-        const { jsPDF } = await import('jspdf');
-        const pdf = new jsPDF("p", "mm", "a4");
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    try {
+      const blob = await domtoimage.toPng(element);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(blob);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Receipt_${payment.payerName || 'Unknown'}_${payment.forMonth || 'NoMonth'}.pdf`);
-    }, 50);
+      pdf.addImage(blob, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Receipt_${payment.payerName || 'Unknown'}_${payment.forMonth || 'NoMonth'}.pdf`);
+    } catch (error) {
+      console.error("❌ PDF generation error:", error);
+    }
   };
 
   return (
-    <div className="border rounded-xl p-4 shadow-sm bg-white space-y-2">
-      <div ref={receiptRef} className="p-2">
-        <h2 className="text-lg font-semibold text-gray-800">{payment.payerName}</h2>
-        <p className="text-gray-600">Flat: {payment.flatNumber}</p>
-        <p className="text-gray-600">Month: {payment.forMonth}</p>
-        <p className="text-gray-600">Amount: ₹{payment.amount}</p>
-        <p className={`font-medium ${payment.paidStatus ? "text-green-600" : "text-red-600"}`}>
-          {payment.paidStatus ?`✅ Paid on ${new Date(payment.transactionDate).toLocaleDateString()}` : `"❌ Not Paid"`}
+    <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6 border border-gray-300 text-sm">
+      {/* Receipt Content */}
+      <div ref={receiptRef} className="space-y-4 font-sans text-gray-700">
+        
+        {/* Branding */}
+        <div className="text-center border-b pb-2 mb-2">
+          <h2 className="text-lg font-bold text-blue-700">Greenview Residency</h2>
+          <p className="text-xs text-gray-500">Plot 12, Sector 8, Gurugram, Haryana</p>
+        </div>
+
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 gap-y-2">
+          <div className="font-medium">Name:</div>
+          <div>{payment.payerName || "—"}</div>
+
+          <div className="font-medium">Flat No.:</div>
+          <div>{payment.flatNumber || "—"}</div>
+
+          <div className="font-medium">Month:</div>
+          <div>{payment.forMonth || "—"}</div>
+
+          <div className="font-medium">Amount:</div>
+          <div>₹{payment.amount || "—"}</div>
+
+          <div className="font-medium">Method:</div>
+          <div>{payment.paymentMethod || "—"}</div>
+
+          <div className="font-medium">Receipt ID:</div>
+          <div>{payment.transactionId || "—"}</div>
+        </div>
+
+        {/* Payment Status */}
+        {payment.paidStatus && (
+          <div className="mt-3 text-green-600 font-semibold border border-green-500 bg-green-50 rounded px-3 py-1 w-fit">
+            ✅ Payment Received
+          </div>
+        )}
+
+        {/* Date */}
+        {payment.transactionDate && (
+          <p className="text-xs text-gray-500">
+            Paid on:{" "}
+            {new Date(payment.transactionDate).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+        )}
+
+        {/* Thank You Note */}
+        <p className="text-center text-xs text-gray-500 mt-4">
+          Thank you for your payment!
         </p>
       </div>
 
+      {/* Button */}
       <button
-        className={`mt-2 px-4 py-2 text-sm rounded-full font-medium transition-colors shadow-md
-          ${payment.paidStatus
-            ? "bg-blue-600 text-white hover:bg-blue-700"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70"
-          }`}
+        className={`mt-4 w-full py-2 px-4 rounded text-white text-sm font-medium transition ${
+          payment.paidStatus
+            ? "bg-blue-600 hover:bg-blue-700"
+            : "bg-gray-300 cursor-not-allowed"
+        }`}
         disabled={!payment.paidStatus}
         onClick={downloadReceipt}
       >
@@ -341,6 +708,7 @@ function MemberReceiptCard({ payment }) {
     </div>
   );
 }
+
 
 
 // --- AccountingPage (Main Component) ---
@@ -657,11 +1025,7 @@ useEffect(() => {
   return (
     <div className="bg-gray-50 min-h-screen px-4 py-10 font-sans antialiased">
       {/* Custom message modal rendered at the top level */}
-      <MessageModal
-        message={message}
-        type={messageType}
-        onClose={clearMessage}
-      />
+      <MessageModal message={message} type={messageType} onClose={clearMessage} />
 
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Premium Accounting Unlock Section (Conditional, based on isSubscribed) */}
@@ -674,13 +1038,9 @@ useEffect(() => {
               height={250}
               className="rounded-lg mb-6 mx-auto object-cover"
             />
-            <h1 className="text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
-              Unlock Premium Accounting
-            </h1>
+            <h1 className="text-4xl font-extrabold text-gray-900 mb-4 leading-tight">Unlock Premium Accounting</h1>
             <p className="text-gray-700 text-lg mb-6 max-w-2xl mx-auto">
-              Simplify society finances with powerful features: income & expense
-              tracking, bank reconciliation, downloadable audit-ready reports
-              and more.
+              Simplify society finances with powerful features: income & expense tracking, bank reconciliation, downloadable audit-ready reports and more.
             </p>
             <Link
               href="/demo"
@@ -690,10 +1050,7 @@ useEffect(() => {
             </Link>
             <p className="mt-6 text-sm text-gray-500">
               Already subscribed?{" "}
-              <Link
-                href="/login"
-                className="text-blue-600 underline hover:text-blue-800"
-              >
+              <Link href="/login" className="text-blue-600 underline hover:text-blue-800">
                 Log in
               </Link>
             </p>
@@ -702,12 +1059,9 @@ useEffect(() => {
 
         {/* Feature Grid Section */}
         <div className="bg-white shadow-xl rounded-2xl p-8 border border-gray-100">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">
-            Society Accounting Features
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Society Accounting Features</h2>
           <p className="text-gray-700 mb-8 max-w-2xl">
-            Access powerful tools to manage your society’s complete financial
-            lifecycle — from dues and collections to reports and audits.
+            Access powerful tools to manage your society’s complete financial lifecycle — from dues and collections to reports and audits.
           </p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
             {[...mainFeatures, ...(showAllFeatures ? extraFeatures : [])].map(
@@ -729,8 +1083,7 @@ useEffect(() => {
                   <p className="text-gray-600 text-sm mb-3">{desc}</p>
                   <button
                     className="text-sm text-blue-700 hover:underline font-semibold focus:outline-none"
-                    onClick={(e) => {
-                      // Prevent card click from also toggling
+                    onClick={(e) => { // Prevent card click from also toggling
                       e.stopPropagation(); // Stop event propagation to avoid triggering parent li's onClick
                       toggleFeature(title);
                     }}
@@ -751,9 +1104,7 @@ useEffect(() => {
               onClick={() => setShowAllFeatures((prev) => !prev)}
               className="text-blue-700 font-semibold hover:underline focus:outline-none text-lg px-6 py-3 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors"
             >
-              {showAllFeatures
-                ? "Show Less Features"
-                : "See All Accounting Features"}
+              {showAllFeatures ? "Show Less Features" : "See All Accounting Features"}
             </button>
           </div>
         </div>
@@ -761,39 +1112,19 @@ useEffect(() => {
         {/* Charts and Summary Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              Monthly Finance Overview
-            </h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Monthly Finance Overview</h3>
             {monthlyData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={monthlyData}>
                   <XAxis dataKey="name" stroke="#6b7280" />
                   <YAxis stroke="#6b7280" />
                   <Tooltip
-                    formatter={(value, name) => [
-                      `₹ ${value.toLocaleString("en-IN")}`,
-                      name,
-                    ]}
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      padding: "10px",
-                    }}
-                    labelStyle={{ color: "#374151", fontWeight: "bold" }}
+                    formatter={(value, name) => [`₹ ${value.toLocaleString('en-IN')}`, name]}
+                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px' }}
+                    labelStyle={{ color: '#374151', fontWeight: 'bold' }}
                   />
-                  <Bar
-                    dataKey="income"
-                    fill="#2563eb"
-                    name="Income"
-                    radius={[10, 10, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="expense"
-                    fill="#f97316"
-                    name="Expense"
-                    radius={[10, 10, 0, 0]}
-                  />
+                  <Bar dataKey="income" fill="#2563eb" name="Income" radius={[10, 10, 0, 0]} />
+                  <Bar dataKey="expense" fill="#f97316" name="Expense" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -803,108 +1134,85 @@ useEffect(() => {
             )}
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 space-y-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
-              This Month's Summary
-            </h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">This Month's Summary</h3>
             <div className="flex justify-between items-center pb-2 border-b border-gray-200">
               <div className="text-gray-600 font-medium">Total Income</div>
-              <div className="font-bold text-green-600 text-lg">
-                ₹ {summary.totalIncome.toLocaleString("en-IN")}
-              </div>
+              <div className="font-bold text-green-600 text-lg">₹ {summary.totalIncome.toLocaleString('en-IN')}</div>
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-gray-200">
               <div className="text-gray-600 font-medium">Total Expenses</div>
-              <div className="font-bold text-red-600 text-lg">
-                ₹ {summary.totalExpenses.toLocaleString("en-IN")}
-              </div>
+              <div className="font-bold text-red-600 text-lg">₹ {summary.totalExpenses.toLocaleString('en-IN')}</div>
             </div>
             <div className="flex justify-between items-center pt-2">
-              <div className="text-gray-700 font-semibold text-lg">
-                Net Balance
-              </div>
-              <div className="font-extrabold text-blue-700 text-2xl">
-                ₹ {summary.netBalance.toLocaleString("en-IN")}
-              </div>
+              <div className="text-gray-700 font-semibold text-lg">Net Balance</div>
+              <div className="font-extrabold text-blue-700 text-2xl">₹ {summary.netBalance.toLocaleString('en-IN')}</div>
             </div>
             {userId && ( // Display Clerk's userId for debugging/identification
-              <div>
-                <p className="text-xs text-gray-400 mt-4 break-all">
-                  Logged in as Clerk ID: {userId}
-                </p>
-                <p className="text-xs text-gray-400 mt-4 break-all">
-                  Logged in user role: {role}
-                </p>
+              <div> 
+                <p className="text-xs text-gray-400 mt-4 break-all">Logged in as Clerk ID: {userId}</p>
+              <p className="text-xs text-gray-400 mt-4 break-all">Logged in user role: {role}</p>
               </div>
             )}
             <button
-              onClick={() => signOut()} // Clerk's signOut method
-              className="mt-4 bg-gray-200 text-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 transition-colors self-end flex items-center justify-center"
-            >
-              <LogOut className="w-4 h-4 mr-2" /> Log Out
-            </button>
+                onClick={() => signOut()} // Clerk's signOut method
+                className="mt-4 bg-gray-200 text-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 transition-colors self-end flex items-center justify-center"
+              >
+                <LogOut className="w-4 h-4 mr-2" /> Log Out
+              </button>
           </div>
         </div>
 
         {/* Forms Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-          {(role === "RESIDENT" || role === "ADMIN") && (
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-5">
-                Record New Payment
-              </h3>
-              <AddPaymentForm
-                onSubmit={handleAddPayment}
-                showMessage={showMessage}
-                userEmail={user?.primaryEmailAddress?.emailAddress}
-              />
+<div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+  
+  {/* PAYMENT FORM - for everyone except visitor */}
+  {role !== 'VISITOR' && (
+    <div>
+      <h3 className="text-2xl font-bold text-gray-800 mb-5">Record New Payment</h3>
+      <AddPaymentForm
+        onSubmit={handleAddPayment}
+        showMessage={showMessage}
+        userEmail={user?.primaryEmailAddress?.emailAddress}
+      />
+    </div>
+  )}
+
+  {/* EXPENSE FORM - only for ADMIN and SUPER_ADMIN */}
+  <RoleGuard roles={['ADMIN', 'SUPER_ADMIN']} userRole={role}>
+    <div>
+      <h3 className="text-2xl font-bold text-gray-800 mb-5">Log New Expense</h3>
+      <AddExpenseForm
+        onSubmit={handleAddExpense}
+        showMessage={showMessage}
+        userEmail={user?.primaryEmailAddress?.emailAddress}
+      />
+    </div>
+  </RoleGuard>
+
+</div>
+
+
+        {/* Member Receipts Section */}
+      {role !== 'VISITOR' && (
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800">Member Payment Receipts</h2>
+          <p className="text-gray-600 max-w-2xl">View and download payment receipts for members. This section automatically updates with new payments.</p>
+          {paymentsList.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paymentsList.map((payment) => (
+                <MemberReceiptCard key={payment.id} payment={payment} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-48 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+              <p>No payment receipts available yet. Add a new payment above!</p>
             </div>
           )}
-
-          {/* Only ADMIN or SUPER_ADMIN can log new expenses */}
-          <RoleGuard roles={["SOCIETY_ADMIN", "SUPER_ADMIN"]} userRole={role}>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-5">
-                Log New Expense
-              </h3>
-              <AddExpenseForm
-                onSubmit={handleAddExpense}
-                showMessage={showMessage}
-                userEmail={user?.primaryEmailAddress?.emailAddress}
-              />
-            </div>
-          </RoleGuard>
         </div>
-        {/* Member Receipts Section */}
-        {role !== "VISITOR" && (
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Member Payment Receipts
-            </h2>
-            <p className="text-gray-600 max-w-2xl">
-              View and download payment receipts for members. This section
-              automatically updates with new payments.
-            </p>
-            {paymentsList.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paymentsList.map((payment) => (
-                  <MemberReceiptCard key={payment.id} payment={payment} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-48 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                <p>
-                  No payment receipts available yet. Add a new payment above!
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+      )}
         {/* Back to Dashboard Link */}
         <div className="text-center mt-10">
-          <Link
-            href="/dashboard"
-            className="text-blue-600 font-medium hover:underline text-lg"
-          >
+          <Link href="/dashboard" className="text-blue-600 font-medium hover:underline text-lg">
             ← Back to Dashboard
           </Link>
         </div>

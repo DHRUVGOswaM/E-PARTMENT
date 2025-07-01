@@ -1,37 +1,66 @@
-import { db } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+// app/api/staff/route.js
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/lib/prisma";
 
-
-export async function POST(req) {
-  const data = await req.formData();
-  const name = data.get("name");
-  const role = data.get("role");
-  const joinedOn = data.get("joinedOn");
-  const image = data.get("image"); // file upload
-
-  const { userId } = await auth();
-  const user = await db.user.findUnique({
-    where: {clerkUserId: userId}
-  })
-  // Assuming image is being saved as URL or base64 string
-  const saved = await db.staff.create({
-    data: {
-      id: userId,
-      name,
-      role,
-      image: image || "", // You can also store file buffer or URL
-      userId: user.id,
-      salary: 50000,
-      societyId: user.societyId,
-
-    },
-  });
-
-  return NextResponse.json(saved);
+// ───── Helpers ───────────────────────────────────────────────────
+async function currentUser() {
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) return null;
+  return db.user.findUnique({ where: { clerkUserId } });
 }
 
+// ───── POST /api/staff  (create) ─────────────────────────────────
+export async function POST(req) {
+  try {
+    const user = await currentUser();
+    if (!user)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    if (user.role !== "SOCIETY_ADMIN" && user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { name, role, salary } = await req.json();
+    if (!name || !role || salary === undefined)
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+
+    const staff = await db.staff.create({
+      data: {
+        name,
+        role,
+        salary: Number(salary),
+        societyId: user.societyId,
+        userId: user.id, // link creator
+      },
+    });
+
+    return NextResponse.json(staff, { status: 201 });
+  } catch (err) {
+    console.error("POST /api/staff:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+// ───── GET /api/staff  (list by society) ────────────────────────
 export async function GET() {
-  const staffList = await prisma.staff.findMany();
-  return NextResponse.json(staffList);
+  try {
+    const user = await currentUser();
+    if (!user)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    if (user.role !== "SOCIETY_ADMIN" && user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const staffList = await db.staff.findMany({
+      where: { societyId: user.societyId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(staffList);
+  } catch (err) {
+    console.error("GET /api/staff:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }

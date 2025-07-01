@@ -1,54 +1,69 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const formData = await req.formData();
-    const file = formData.get('slip');
+    const { userId } = await auth();
+    if (!userId)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const staffId = formData.get('staffId');
-    const salaryAmount = formData.get('salaryAmount');
-    const paymentDate = new Date(formData.get('paymentDate'));
-    const overtime = formData.get('overtime') || null;
-    const leaveDeduction = formData.get('leaveDeduction') || null;
-    const tdaCut = formData.get('tdaCut') || null;
-    const festivalAdvance = formData.get('festivalAdvance') || null;
-    const notes = formData.get('notes') || null;
-    const paymentMode = formData.get('paymentMode') || 'Cash';
+    const clerkUser = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
 
-    let fileUrl = null;
-    if (file && file.name) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const fileName = `${Date.now()}-${file.name}`;
-      const path = join(process.cwd(), 'public', 'salary_slips', fileName);
-
-      await writeFile(path, buffer);
-      fileUrl = `/salary_slips/${fileName}`;
+    if (
+      !clerkUser ||
+      !["SOCIETY_ADMIN", "SUPER_ADMIN"].includes(clerkUser.role)
+    ) {
+      return NextResponse.json({ error: "Access Denied" }, { status: 403 });
     }
 
-    await prisma.salarySlip.create({
+    const body = await req.json();
+    const { staff_id, amount, status, payDate, notes } = body;
+
+    const created = await db.salary.create({
       data: {
-        staffId,
-        salaryAmount: parseFloat(salaryAmount),
-        paymentDate,
-        overtime,
-        leaveDeduction,
-        tdaCut,
-        festivalAdvance,
-        notes,
-        paymentMode,
-        slipUrl: fileUrl,
+        id: crypto.randomUUID(),
+        staff_id,
+        amount,
+        status,
+        payDate: new Date(payDate),
       },
     });
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: error.message });
+    return NextResponse.json(created);
+  } catch (err) {
+    console.error("Salary upload error:", err);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
+}
+
+export async function GET() {
+  const { userId } = await auth();
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user)
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  const salaries = await db.salary.findMany({
+    where: {
+      Staff: {
+        societyId: user.societyId,
+      },
+    },
+    include: {
+      Staff: true,
+    },
+  });
+
+  return NextResponse.json(salaries);
 }

@@ -111,8 +111,18 @@ export async function POST(request) {
       flatNumber,
       forMonth,
       paidStatus,
+
+      // ✅ New optional fields
+      bankName,
+      ifscCode,
+      transactionId,
+      upiId,
+      chequeNumber
     } = body;
 
+   let newPaymentMethod = paymentMethod?.toUpperCase() || null;
+
+    // Validation
     if (!amount || !type || !["INCOME", "EXPENSE"].includes(type)) {
       return NextResponse.json(
         { message: "Amount and valid Type (INCOME/EXPENSE) are required." },
@@ -134,12 +144,19 @@ export async function POST(request) {
         category: category || null,
         description: description || null,
         transactionDate: new Date(transactionDate),
-        paymentMethod: paymentMethod || null,
+        paymentMethod: newPaymentMethod || null,
         payerName: payerName || null,
         flatNumber: flatNumber || null,
         forMonth: forMonth || null,
         paidStatus: paidStatus ?? null,
         recorderId: prismaUserId,
+
+        // ✅ Add new fields for payment method details
+        bankName: bankName || "",
+        ifscCode: ifscCode || "",
+        transactionId: transactionId || "",
+        upiId: upiId || "",
+        chequeNumber: chequeNumber || "",
       },
     });
 
@@ -153,3 +170,4 @@ export async function POST(request) {
     );
   }
 }
+

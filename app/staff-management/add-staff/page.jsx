@@ -1,53 +1,110 @@
-'use client'
-import { useState } from 'react';
+"use client";
 
-export default function AddStaff() {
-  const [formData, setFormData] = useState({
-    name: '',
-    contact: '',
-    role: '',
-    photo: null,
-  });
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === 'photo') {
-      setFormData({ ...formData, photo: files[0] });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
+export default function AddStaffPage() {
+  const router = useRouter();
+  const [role, setRole] = useState(null);
+  const [loadingRole, setLoadingRole] = useState(true);
 
-  const handleSubmit = async (e) => {
+  // form state
+  const [name, setName] = useState("");
+  const [staffRole, setStaffRole] = useState("");
+  const [salary, setSalary] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // ── fetch current user role ────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/users/me");
+        if (r.ok) {
+          const { role } = await r.json();
+          setRole(role);
+        }
+      } finally {
+        setLoadingRole(false);
+      }
+    })();
+  }, []);
+
+  // ── access control ────────────────────────────────────────
+  if (loadingRole) return <p className="p-6 text-blue-800">Loading…</p>;
+  if (role !== "SOCIETY_ADMIN" && role !== "SUPER_ADMIN") {
+    return (
+      <p className="p-6 text-red-600 font-medium">
+        Access denied – only Society Admins or Super Admins can add staff.
+      </p>
+    );
+  }
+
+  // ── submit handler ────────────────────────────────────────
+  const submit = async (e) => {
     e.preventDefault();
-
-    const data = new FormData();
-    data.append('name', formData.name);
-    data.append('contact', formData.contact);
-    data.append('role', formData.role);
-    data.append('photo', formData.photo);
-
-    const res = await fetch('/api/staff-management/add', {
-      method: 'POST',
-      body: data,
-    });
-
-    if (res.ok) {
-      alert('Staff added successfully!');
-    } else {
-      alert('Failed to add staff');
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/staff-management/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, role: staffRole, salary }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error || "Failed");
+      }
+      router.push("/staff"); // success redirect
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  // ── form UI ───────────────────────────────────────────────
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-semibold text-blue-800 mb-4">Add New Staff</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input name="name" placeholder="Name" onChange={handleChange} className="w-full p-2 border rounded" required />
-        <input name="contact" placeholder="Contact" onChange={handleChange} className="w-full p-2 border rounded" required />
-        <input name="role" placeholder="Role" onChange={handleChange} className="w-full p-2 border rounded" required />
-        <input name="photo" type="file" accept="image/*" onChange={handleChange} className="w-full p-2 border rounded" />
-        <button type="submit" className="bg-blue-700 text-white px-4 py-2 rounded">Submit</button>
+    <div className="max-w-xl mx-auto bg-white shadow p-6 rounded-xl">
+      <h1 className="text-2xl font-bold mb-6">Add New Staff</h1>
+      <form onSubmit={submit} className="space-y-5">
+        <div>
+          <label className="block text-sm font-medium mb-1">Full Name</label>
+          <input
+            className="w-full border rounded p-2"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Role / Title</label>
+          <input
+            className="w-full border rounded p-2"
+            value={staffRole}
+            onChange={(e) => setStaffRole(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Salary (₹)</label>
+          <input
+            type="number"
+            min="0"
+            className="w-full border rounded p-2"
+            value={salary}
+            onChange={(e) => setSalary(e.target.value)}
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          {submitting ? "Saving…" : "Add Staff"}
+        </button>
       </form>
     </div>
   );
