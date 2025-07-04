@@ -63,6 +63,7 @@ model Society {
   emergencyContacts  EmergencyContact[]
   staff              Staff[]
   paymentQR          PaymentQR[]
+  watchmanLogs       EntryLog[]
 
   @@map("societies")
 }
@@ -441,6 +442,7 @@ model Staff {
   Salary       Salary[]
   shift        Shift[]
   leaveRequest leaveRequest[]
+  watchmanLog  EntryLog[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   societyId    String
@@ -523,6 +525,35 @@ model MarqueeNotice {
   society   Society  @relation(fields: [societyId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+
+
+/// Single table for all gate logs
+model EntryLog {
+  id            String   @id @default(cuid())
+  personType    EntryType
+  personName    String
+  vehicleNumber String?
+  inTime        DateTime @default(now())
+  outTime       DateTime?
+  // relations
+  societyId     String
+  society       Society  @relation(fields: [societyId], references: [id])
+  watchmanId    String
+  watchman      Staff?   @relation(fields: [watchmanId], references: [id])
+  /// ↓ indexes for fast daily lookups
+  @@index([societyId, inTime])
+  @@index([outTime])
+}
+
+
+/// New enum to classify the person being logged
+enum EntryType {
+  RESIDENT
+  VISITOR
+  VENDOR
 }
 
 enum ComplaintType {

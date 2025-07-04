@@ -58,7 +58,32 @@ export async function PATCH(req) {
         data: flatUpdateField,
       });
     }
-    // 3) mark request done
+
+    // 3) create society member row
+    const staffRoles = ["STAFF", "TECHNICIAN", "WATCHMAN"];
+    if (staffRoles.includes(reqEntry.requestedRole)) {
+      // avoid duplicate staff rows if user was already a staff member
+      const existing = await db.staff.findFirst({
+        where: { userId: reqEntry.userId, societyId: reqEntry.societyId },
+      });
+
+
+      
+      if (!existing) {
+        await db.staff.create({
+          data: {
+            name: reqEntry.userId.name || reqEntry.userId.firstName || "", // fallback if user.name nullable
+            role: reqEntry.requestedRole,
+            salary: 0, // or set an initial salary
+            societyId: reqEntry.societyId,
+            userId: reqEntry.userId,
+          },
+        });
+      }
+    }
+
+    
+    // 4) mark request done
     await db.pendingAccess.delete({
       where: { id },
     });

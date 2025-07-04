@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import QrScanner from "@/components/QrScanner";
+import { Button } from "@/components/ui/button";
 
 export default function QrScanPage() {
   const router = useRouter();
@@ -23,11 +24,17 @@ export default function QrScanPage() {
   };
 
   return (
+    <>
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-2">Scan QR to Check In</h1>
+      <h1 className="text-xl font-bold mb-2">Scan QR to update the Visitor log</h1>
       <QrScanner
         onScan={handleScan}
       />
     </div>
+
+    <div className="p-4 items-center justify-center flex">
+        <Button onClick={() => router.push("/watchman")} className="cursor-pointer">Go Back</Button>
+    </div>
+    </>
   );
 }

@@ -52,16 +52,6 @@ export default function NavbarClient() {
               Super Admin
             </Link>
           </>
-        ) : dbUser?.role === "WATCHMAN" ? (
-          <>
-            {" "}
-            <Link href="/dashboard" className={baseBtn}>
-              Dashboard
-            </Link>
-            <Link href="/dashboard/guard" className={baseBtn}>
-              Guard Dashboard
-            </Link>
-          </>
         ) : dbUser?.role === "SOCIETY_ADMIN" ? (
           <div className="flex gap-2">
             <Link href="/dashboard" className={baseBtn}>

@@ -24,6 +24,14 @@ const DashboardWatchMan = () => {
   return (
     <>
       
+        <Link href="/watchman">
+          <Section
+            title="watchman"
+            description="Manage entry logs and visitor records."
+          />
+      </Link>
+      
+
         <Link href="/visitor">
           <Section
             title="Visitor Log"
