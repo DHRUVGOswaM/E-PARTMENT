@@ -3,8 +3,56 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { hasRouteAccess } from "@/lib/roleAccess";
 
 export default function HomePage() {
+  const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Get user role
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/users/me");
+        if (res.ok) {
+          const data = await res.json();
+          setUserRole(data.role);
+        } else {
+          setUserRole("VISITOR"); // Default to visitor if not authenticated
+        }
+      } catch (err) {
+        setUserRole("VISITOR"); // Default to visitor on error
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Function to get appropriate link based on user role
+  const getFeatureLink = (originalLink) => {
+    // Allow direct access to join-society and public pages
+    if (originalLink === "/join-society" || originalLink === "/Features") {
+      return originalLink;
+    }
+    
+    // For unauthorized users, redirect to feature showcase
+    if (!userRole || userRole === "VISITOR" || !hasRouteAccess(userRole, originalLink)) {
+      return "/feature-showcase";
+    }
+    return originalLink;
+  };
+  // Show loading state to prevent flash of wrong content
+  if (loading) {
+    return (
+      <main className="px-6 md:px-12 py-10 space-y-20 bg-gray-50 scroll-smooth">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-blue-600 text-lg">Loading...</div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="px-6 md:px-12 py-10 space-y-20 bg-gray-50 scroll-smooth">
       {/* Hero Section */}
@@ -132,7 +180,7 @@ export default function HomePage() {
 {
   title: "Staff Management",
   img: "/image copy.png",
-  desc: "Maintain staff details, attendance, shift schedules, and assign responsibilities with complete visibility.",
+  desc: "Maintain staff details, shift schedules, and assign responsibilities with complete visibility.",
   link: "/staff",
 },           {
               title: "Explore All Features",
@@ -141,8 +189,13 @@ export default function HomePage() {
               link: "/Features",
             },
             
-          ].map((feature, index) => (
-            <Link href={feature.link || "#"} key={index} className="block">
+          ].map((feature, index) => {
+            const linkHref = getFeatureLink(feature.link);
+            const isRedirectToShowcase = linkHref === "/feature-showcase" && feature.link !== "/feature-showcase";
+            const isRedirectToJoin = linkHref === "/join-society" && feature.link !== "/join-society";
+            
+            return (
+            <Link href={linkHref} key={index} className="block relative group">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -164,9 +217,15 @@ export default function HomePage() {
                 <p className="text-sm text-center text-gray-600">
                   {feature.desc}
                 </p>
+                {(isRedirectToShowcase || isRedirectToJoin) && (
+                  <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    {isRedirectToShowcase ? "Preview Feature" : "Join to Access"}
+                  </div>
+                )}
               </motion.div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </motion.section>
 

@@ -48,15 +48,19 @@ export async function PATCH(req) {
 
     // 2) attach to flat if provided
     if (reqEntry.flatId) {
-      const flatUpdateField =
-        reqEntry.requestedRole === "HOUSE_OWNER"
-          ? { ownerId: reqEntry.userId }
-          : { residentId: reqEntry.userId };
+      let flatUpdateField;
+      if (reqEntry.requestedRole === "HOUSE_OWNER") {
+        flatUpdateField = { ownerId: reqEntry.userId };
+      } else if (["SOCIETY_MEMBER", "TENANT", "RESIDENT"].includes(reqEntry.requestedRole)) {
+        flatUpdateField = { residentId: reqEntry.userId };
+      }
 
-      await db.flat.update({
-        where: { id: reqEntry.flatId },
-        data: flatUpdateField,
-      });
+      if (flatUpdateField) {
+        await db.flat.update({
+          where: { id: reqEntry.flatId },
+          data: flatUpdateField,
+        });
+      }
     }
 
     // 3) create society member row

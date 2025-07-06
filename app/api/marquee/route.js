@@ -53,3 +53,26 @@ export async function POST(req) {
     );
   }
 }
+
+
+export async function DELETE(req) {
+  try {
+    const { id } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+    }
+
+    await db.marqueeNotice.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: "Notice deleted" }, { status: 200 });
+  } catch (error) {
+    console.error("Delete failed:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}

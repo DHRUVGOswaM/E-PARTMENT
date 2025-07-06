@@ -28,6 +28,13 @@ const features = [
     icon: <Users className="h-8 w-8" />,
     href: "/dashboard/society-admin/access-requests",
   },
+  // ───── Staff Management Features ─────
+  {
+    title: "Staff Management",
+    icon: <FileSignature className="h-8 w-8" />,
+    href: "/staff-management",
+  },
+
   {
     title: "Emergency Contacts",
     icon: <AlertTriangle className="h-8 w-8" />,
@@ -37,32 +44,6 @@ const features = [
     title: "Complaints",
     icon: <ClipboardList className="h-8 w-8" />,
     href: "/dashboard/secretary/complaints",
-  },
-  // ───── Staff Management Features ─────
-  {
-    title: "Add New Staff",
-    icon: <UserPlus className="h-8 w-8" />,
-    href: "/staff-management/add-staff",
-  },
-  {
-    title: "Manage Leave Requests",
-    icon: <CalendarCheck className="h-8 w-8" />,
-    href: "/staff-management/leave-requests",
-  },
-  {
-    title: "Assign Shifts",
-    icon: <Clock className="h-8 w-8" />,
-    href: "/staff-management/assign-shift",
-  },
-  {
-    title: "Assign Tasks",
-    icon: <ClipboardCheck className="h-8 w-8" />,
-    href: "/staff-management/assign-task",
-  },
-  {
-    title: "Upload Salary Slips",
-    icon: <FileSignature className="h-8 w-8" />,
-    href: "/staff-management/upload-salary-slip",
   },
 ];
 

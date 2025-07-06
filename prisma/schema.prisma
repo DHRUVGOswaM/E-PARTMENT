@@ -527,27 +527,24 @@ model MarqueeNotice {
   updatedAt DateTime @updatedAt
 }
 
-
-
-
 /// Single table for all gate logs
 model EntryLog {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   personType    EntryType
   personName    String
   vehicleNumber String?
-  inTime        DateTime @default(now())
+  inTime        DateTime  @default(now())
   outTime       DateTime?
   // relations
   societyId     String
-  society       Society  @relation(fields: [societyId], references: [id])
+  society       Society   @relation(fields: [societyId], references: [id])
   watchmanId    String
-  watchman      Staff?   @relation(fields: [watchmanId], references: [id])
+  watchman      Staff?    @relation(fields: [watchmanId], references: [id])
+
   /// ↓ indexes for fast daily lookups
   @@index([societyId, inTime])
   @@index([outTime])
 }
-
 
 /// New enum to classify the person being logged
 enum EntryType {
@@ -574,6 +571,8 @@ enum Role {
   HOUSE_OWNER
   SOCIETY_MEMBER
   VISITOR
+  TENANT
+  RESIDENT
 }
 
 enum ComplaintStatus {

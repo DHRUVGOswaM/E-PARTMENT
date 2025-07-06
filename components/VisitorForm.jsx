@@ -18,16 +18,39 @@ export default function VisitorForm({ onSuccess }) {
     imageUrl: "",
   });
 
+  const [phoneError, setPhoneError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    if (name === 'phoneNumber') {
+      // Only allow digits and limit to 10 characters
+      const phoneValue = value.replace(/\D/g, '');
+      if (phoneValue.length <= 10) {
+        setFormData({ ...formData, [name]: phoneValue });
+        setPhoneError('');
+        if (phoneValue.length === 10 && !/^[6-9]/.test(phoneValue)) {
+          setPhoneError('Mobile number must start with 6, 7, 8, or 9');
+        }
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate phone number
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(formData.phoneNumber)) {
+      setPhoneError('Please enter a valid 10-digit mobile number starting with 6-9');
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -59,7 +82,7 @@ export default function VisitorForm({ onSuccess }) {
   
 
   return (
-    <form className="space-y-4 max-w-md mx-auto" onSubmit={handleSubmit}>
+    <form className="space-y-4 max-w-md mx-auto p-4 sm:p-6" onSubmit={handleSubmit}>
       <div>
         <Label htmlFor="name">Visitor Name</Label>
         <Input
@@ -101,8 +124,12 @@ export default function VisitorForm({ onSuccess }) {
           name="phoneNumber"
           value={formData.phoneNumber}
           onChange={handleChange}
+          placeholder="Enter 10-digit mobile number"
+          maxLength={10}
+          className={phoneError ? 'border-red-500' : ''}
           required
         />
+        {phoneError && <p className="text-red-500 text-sm mt-1">{phoneError}</p>}
       </div>
 
       <div>
@@ -136,7 +163,7 @@ export default function VisitorForm({ onSuccess }) {
         />
       </div>
 
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" disabled={loading} className="w-full">
         {loading ? "Submitting..." : "Preapprove Visitor"}
       </Button>
     </form>

@@ -24,7 +24,14 @@ export default function DashboardSocietySecretary() {
 
   return (
     <>
-      {/* --- Secretary Features --- */}
+      {/* --- Core Society Management --- */}
+      <Link href="/dashboard/society-admin">
+        <Section
+          title="Society Admin Panel"
+          description="Access complete society management features and staff management."
+        />
+      </Link>
+
       <Link href="/allVisitor">
         <Section
           title="Visitor Management"
@@ -34,89 +41,26 @@ export default function DashboardSocietySecretary() {
 
       <Link href="/Accounting">
         <Section
-          title="Payment Reports"
-          description="Access and export billing details."
+          title="Financial Management"
+          description="Access accounting, billing, and financial reports."
         />
       </Link>
 
-
-      <Link href="/dashboard/society-admin/upload-qr">
-        <Section
-          title="Upload Society QR"
-          description="Upload UPI QR code for payments."
-        />
-      </Link>
-
-      <Link href="/notice-board">
-        <Section
-          title="Noticeboard Management"
-          description="Post and manage society notices."
-        />
-      </Link>
-
-      <Link href="/accounting">
-        <Section
-          title="Accounting"
-          description="Track expenses and society transactions."
-        />
-      </Link>
 
       <Link href="/polls">
         <Section
           title="Polls & Voting"
-          description="Manage society polls and feedback."
+          description="Manage society polls and community decisions."
         />
       </Link>
 
-      <Link href="/dashboard/society-admin">
+      <Link href="/dashboard/society-admin/upload-qr">
         <Section
-          title="Society Admin Panel"
-          description="Access society management features."
+          title="Payment Setup"
+          description="Upload and manage UPI QR codes for payments."
         />
       </Link>
 
-      <Link href="/dashboard/society-admin/access-requests">
-        <Section
-          title="Access Requests"
-          description="Approve or reject user access requests."
-        />
-      </Link>
-
-      {/* --- Staff Management Panel --- */}
-      <Link href="/staff-management/add-staff">
-        <Section
-          title="Add New Staff"
-          description="Register new staff for society."
-        />
-      </Link>
-
-      <Link href="/staff-management/leave-requests">
-        <Section
-          title="Manage Leave Requests"
-          description="Review and process staff leave."
-        />
-      </Link>
-
-      <Link href="/staff-management/assign">
-        <Section
-          title="Assign Shift"
-          description="Allocate shift timings to staff."
-        />
-      </Link>
-
-      <Link href="/staff-management/assign-task">
-        <Section
-          title="Assign Task"
-          description="Distribute daily staff responsibilities."
-        />
-      </Link>
-
-      <Link href="/staff-management/upload-salary-slip">
-        <Section
-          title="Upload Salary Slip"
-          description="Upload monthly staff salary slips."
-        />
-      </Link>
     </>
   );
 }

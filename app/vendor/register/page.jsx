@@ -16,6 +16,7 @@ export default function VendorRegisterPage() {
     imageUrl: "", // Optional
   });
 
+  const [contactError, setContactError] = useState('');
   const [qrCode, setQrCode] = useState(null);
   const [uploading, setUploading] = useState(false);
 
@@ -60,6 +61,13 @@ export default function VendorRegisterPage() {
   
 
   const handleSubmit = async () => {
+    // Validate contact number
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(form.contact)) {
+      setContactError('Please enter a valid 10-digit mobile number starting with 6-9');
+      return;
+    }
+
     const res = await fetch("/api/vendor/register", {
       method: "POST",
       body: JSON.stringify(form),
@@ -76,18 +84,37 @@ export default function VendorRegisterPage() {
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl mb-4 font-bold">📝 Register Vendor</h1>
+    <div className="p-4 sm:p-6 max-w-xl mx-auto">
+      <h1 className="text-xl sm:text-2xl mb-4 font-bold text-center">📝 Register Vendor</h1>
       <div className="space-y-4">
         {Object.keys(form).map(
           (field) =>
             field !== "imageUrl" && (
-              <Input
-                key={field}
-                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                value={form[field]}
-                onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-              />
+              <div key={field}>
+                <Input
+                  type={field === 'contact' ? 'tel' : field === 'email' ? 'email' : 'text'}
+                  placeholder={field === 'contact' ? 'Enter 10-digit mobile number' : field.charAt(0).toUpperCase() + field.slice(1)}
+                  value={form[field]}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (field === 'contact') {
+                      const phoneValue = value.replace(/\D/g, ''); // Remove non-digits
+                      if (phoneValue.length <= 10) {
+                        setForm({ ...form, [field]: phoneValue });
+                        setContactError('');
+                        if (phoneValue.length === 10 && !/^[6-9]/.test(phoneValue)) {
+                          setContactError('Mobile number must start with 6, 7, 8, or 9');
+                        }
+                      }
+                    } else {
+                      setForm({ ...form, [field]: value });
+                    }
+                  }}
+                  maxLength={field === 'contact' ? 10 : undefined}
+                  className={field === 'contact' && contactError ? 'border-red-500' : ''}
+                />
+                {field === 'contact' && contactError && <p className="text-red-500 text-sm mt-1">{contactError}</p>}
+              </div>
             )
         )}
 
@@ -105,7 +132,7 @@ export default function VendorRegisterPage() {
         />
 
         {/* ✅ Submit Button */}
-        <Button onClick={handleSubmit} disabled={uploading}>
+        <Button onClick={handleSubmit} disabled={uploading} className="w-full">
           {uploading ? "Uploading..." : "Register & Generate QR"}
         </Button>
 

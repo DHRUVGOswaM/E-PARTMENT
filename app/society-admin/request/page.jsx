@@ -21,6 +21,7 @@ export default function AdminRequestForm() {
     phoneNumber: "",
   });
 
+  const [phoneError, setPhoneError] = useState('');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -43,11 +44,27 @@ export default function AdminRequestForm() {
     })();
   }, []);
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'phoneNumber') {
+      const phoneValue = value.replace(/\D/g, ''); // Remove non-digits
+      if (phoneValue.length <= 10) {
+        setForm({ ...form, [name]: phoneValue });
+        setPhoneError('');
+        if (phoneValue.length === 10 && !/^[6-9]/.test(phoneValue)) {
+          setPhoneError('Mobile number must start with 6, 7, 8, or 9');
+        }
+      }
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+  };
 
-  const isFormValid = () =>
-    form.apartmentName && form.address && form.phoneNumber;
+  const isFormValid = () => {
+    const phoneRegex = /^[6-9]\d{9}$/;
+    return form.apartmentName && form.address && form.phoneNumber && phoneRegex.test(form.phoneNumber);
+  };
 
   const payAndSubmit = async () => {
     if (!isFormValid()) {
@@ -132,8 +149,8 @@ export default function AdminRequestForm() {
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
 
-      <div className="max-w-xl mx-auto p-6 space-y-6">
-        <h1 className="text-2xl font-bold">🏢 Request Admin Access</h1>
+      <div className="max-w-xl mx-auto p-4 sm:p-6 space-y-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-center">🏢 Request Admin Access</h1>
 
         {user && (
           <>
@@ -150,7 +167,6 @@ export default function AdminRequestForm() {
           {[
             { name: "apartmentName", label: "Society / Apartment Name" },
             { name: "address", label: "Address" },
-            { name: "phoneNumber", label: "Phone Number", type: "tel" },
             { name: "registrationNumber", label: "Registration Number" },
             { name: "totalFlats", label: "Total Flats", type: "number" },
           ].map((f) => (
@@ -165,6 +181,22 @@ export default function AdminRequestForm() {
               />
             </div>
           ))}
+          
+          {/* Phone Number with validation */}
+          <div>
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              name="phoneNumber"
+              type="tel"
+              placeholder="Enter 10-digit mobile number"
+              value={form.phoneNumber}
+              onChange={handleChange}
+              maxLength={10}
+              className={phoneError ? 'border-red-500' : ''}
+            />
+            {phoneError && <p className="text-red-500 text-sm mt-1">{phoneError}</p>}
+          </div>
         </div>
 
         <Button onClick={payAndSubmit} disabled={loading} className="w-full">

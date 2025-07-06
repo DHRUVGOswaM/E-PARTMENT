@@ -4,14 +4,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import Section from "../section";      // adjust path if Section lives elsewhere
-import RoleGuard from "../RoleGuard";  // adjust path if needed
+import Section from "../section";
+import RoleGuard from "../RoleGuard";
 
 export default function DashboardStaff() {
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Get role from /api/users/me (keeps logic in one place)
+  // Get role from /api/users/me
   useEffect(() => {
     (async () => {
       try {
@@ -41,79 +41,28 @@ export default function DashboardStaff() {
 
   return (
     <>
-      {/* ─────── STAFF SELF-SERVICE PANEL ─────── */}
-      <RoleGuard roles={["STAFF"]} userRole={userRole}>
-        <Link href="/staff/attendance">
+      {/* ─────── STAFF SELF-SERVICE FEATURES ─────── */}
+      <RoleGuard roles={["STAFF", "WATCHMAN", "TECHNICIAN"]} userRole={userRole}>
+        <Link href="/staff">
           <Section
-            title="Mark Attendance"
-            description="Clock in / out for your shift."
-          />
-        </Link>
-        <Link href="/staff/leave">
-          <Section
-            title="Apply Leave"
-            description="Submit leave applications."
-          />
-        </Link>
-        <Link href="/staff/salary">
-          <Section
-            title="View Salary"
-            description="Download your salary slip."
-          />
-        </Link>
-        <Link href="/staff/emergency-salary">
-          <Section
-            title="Emergency Salary Request"
-            description="Request an advance payout."
-          />
-        </Link>
-        <Link href="/staff/view-shift-task">
-          <Section
-            title="View Shift / Task"
-            description="See today’s shift & tasks."
+            title="Staff Portal"
+            description="Access all staff features, salary, leave, and shift information."
           />
         </Link>
         <Link href="/complaints">
           <Section
-            title="Complaints"
-            description="View resident maintenance complaints."
+            title="View Complaints"
+            description="View and respond to resident maintenance complaints."
           />
         </Link>
       </RoleGuard>
 
-      {/* ─────── STAFF-MANAGEMENT PANEL (ADMIN-ONLY) ─────── */}
-      <RoleGuard
-        roles={[ "SUPER_ADMIN", "SOCIETY_ADMIN"]}
-        userRole={userRole}
-      >
-        <Link href="/staff-management/add-staff">
+      {/* ─────── WATCHMAN SPECIFIC FEATURES ─────── */}
+      <RoleGuard roles={["WATCHMAN"]} userRole={userRole}>
+        <Link href="/watchman">
           <Section
-            title="Add New Staff"
-            description="On-board new team members."
-          />
-        </Link>
-        <Link href="/staff-management/leave-requests">
-          <Section
-            title="Manage Leave Requests"
-            description="Approve or reject leave."
-          />
-        </Link>
-        <Link href="/staff-management/assign-shift">
-          <Section
-            title="Assign Shift"
-            description="Create or modify shift schedule."
-          />
-        </Link>
-        <Link href="/staff-management/assign-task">
-          <Section
-            title="Assign Task"
-            description="Allocate daily tasks."
-          />
-        </Link>
-        <Link href="/staff-management/upload-salary-slip">
-          <Section
-            title="Upload Salary Slip"
-            description="Publish salary slips for staff."
+            title="Watchman Dashboard"
+            description="Manage entry logs, visitors, and vendor access."
           />
         </Link>
       </RoleGuard>

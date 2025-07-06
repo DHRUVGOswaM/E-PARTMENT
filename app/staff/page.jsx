@@ -1,119 +1,211 @@
 // app/staff/page.jsx
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import RoleGuard from "@/components/RoleGuard";
 
 export default function StaffHome() {
+  const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Get role from /api/users/me
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/users/me");
+        if (res.ok) {
+          const data = await res.json();
+          setUserRole(data.role);
+        } else {
+          console.error("Failed role fetch: ", res.status);
+        }
+      } catch (err) {
+        console.error("Role fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-blue-800">
+        <Loader2 className="mr-2 animate-spin text-blue-500" />
+        Loading staff portal...
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 space-y-8">
-      <h1 className="text-2xl font-bold text-center">
-        Welcome to Staff Portal
+    <div className="min-h-screen p-6 bg-gradient-to-br from-blue-50 to-blue-100">
+      <h1 className="text-3xl font-bold text-center mb-8 text-blue-900">
+        Staff Portal
       </h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Staff Component */}
-        <div className="border rounded-xl p-6 shadow bg-white">
-          <h2 className="text-2xl font-semibold mb-4 text-blue-700">
-            Staff Panel
-          </h2>
-          <ul className="space-y-2">
-            <li>
+      
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Staff Self-Service Features - Visible to all staff */}
+        <RoleGuard roles={["STAFF", "WATCHMAN", "TECHNICIAN"]} userRole={userRole}>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-2xl font-semibold mb-6 text-blue-700 border-b pb-3">
+              Staff Features
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <Link
-                className="text-blue-600 hover:underline"
-                href="/staff/attendance"
-              >
-                Mark Attendance
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="text-blue-600 hover:underline"
+                className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
                 href="/staff/leave"
               >
-                Apply Leave
+                <h3 className="font-semibold text-blue-800">Apply Leave</h3>
+                <p className="text-blue-600 text-sm">Submit leave applications</p>
               </Link>
-            </li>
-            <li>
+              
               <Link
-                className="text-blue-600 hover:underline"
+                className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
                 href="/staff/salary"
               >
-                View Salary
+                <h3 className="font-semibold text-blue-800">View Salary</h3>
+                <p className="text-blue-600 text-sm">Download your salary slip</p>
               </Link>
-            </li>
-            {/* <li>
+              
               <Link
-                className="text-blue-600 hover:underline"
+                className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
                 href="/staff/emergency-salary"
               >
-                Emergency Salary Request
+                <h3 className="font-semibold text-blue-800">Emergency Salary Request</h3>
+                <p className="text-blue-600 text-sm">Request an advance payout</p>
               </Link>
-            </li> */}
-            <li>
+              
               <Link
-                className="text-blue-600 hover:underline"
+                className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
                 href="/staff/view-shift-task"
               >
-                View Shift/Task
+                <h3 className="font-semibold text-blue-800">View Shift/Task</h3>
+                <p className="text-blue-600 text-sm">See today's shift & tasks</p>
               </Link>
-            </li>
-          </ul>
-        </div>
-        {/* Staff Management Component */}
-        <div className="border rounded-xl p-6 shadow bg-white">
-          <h2 className="text-2xl font-semibold mb-4 text-blue-700">
-            Staff Management (Admin Only)
-          </h2>
-          <ul className="space-y-2">
-            <li>
+              
               <Link
-                className="text-blue-600 hover:underline"
-                href="/staff-management/add-staff"
+                className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
+                href="/complaints"
               >
-                Add New Staff
+                <h3 className="font-semibold text-blue-800">View Complaints</h3>
+                <p className="text-blue-600 text-sm">View resident maintenance complaints</p>
               </Link>
-            </li>
-            <li>
+              
               <Link
-                className="text-blue-600 hover:underline"
-                href="/staff-management/leave-requests"
-              >
-                Manage Leave Requests
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="text-blue-600 hover:underline"
-                href="/staff-management/assign"
-              >
-                Assign Shift & Task
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="text-blue-600 hover:underline"
-                href="/staff-management/upload-salary-slip"
-              >
-                Upload Salary Slip
-              </Link>
-            </li>
-          </ul>
-        </div>
-        {/* Resident Feedback Component */}
-        <div className="border rounded-xl p-6 shadow bg-white">
-          <h2 className="text-2xl font-semibold mb-4 text-blue-700">
-            Resident Feedback
-          </h2>
-          <ul className="space-y-2">
-            <li>
-              <Link
-                className="text-blue-600 hover:underline"
+                className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
                 href="/resident-feedback"
               >
-                Submit Feedback
+                <h3 className="font-semibold text-blue-800">Submit Feedback</h3>
+                <p className="text-blue-600 text-sm">Provide feedback to management</p>
               </Link>
-            </li>
-          </ul>
-        </div>
+            </div>
+          </div>
+        </RoleGuard>
+
+        {/* Watchman Specific Features */}
+        <RoleGuard roles={["WATCHMAN"]} userRole={userRole}>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-2xl font-semibold mb-6 text-green-700 border-b pb-3">
+              Watchman Features
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Link
+                className="block p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                href="/watchman"
+              >
+                <h3 className="font-semibold text-green-800">Entry Logs</h3>
+                <p className="text-green-600 text-sm">Manage entry logs and visitor records</p>
+              </Link>
+              
+              <Link
+                className="block p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                href="/visitor"
+              >
+                <h3 className="font-semibold text-green-800">Visitor Log</h3>
+                <p className="text-green-600 text-sm">Log and verify visitor entries</p>
+              </Link>
+              
+              <Link
+                className="block p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                href="/vendor/register"
+              >
+                <h3 className="font-semibold text-green-800">Register Vendor</h3>
+                <p className="text-green-600 text-sm">Register new vendors for society services</p>
+              </Link>
+              
+              <Link
+                className="block p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                href="/vendor/scan"
+              >
+                <h3 className="font-semibold text-green-800">Scan Vendor QR</h3>
+                <p className="text-green-600 text-sm">Scan vendor QR codes to verify identity</p>
+              </Link>
+            </div>
+          </div>
+        </RoleGuard>
+
+        {/* Staff Management Features - Only for Society Admin */}
+        <RoleGuard roles={["SOCIETY_ADMIN", "SUPER_ADMIN"]} userRole={userRole}>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-2xl font-semibold mb-6 text-red-700 border-b pb-3">
+              Staff Management (Admin Only)
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Link
+                className="block p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                href="/staff-management/add-staff"
+              >
+                <h3 className="font-semibold text-red-800">Add New Staff</h3>
+                <p className="text-red-600 text-sm">On-board new team members</p>
+              </Link>
+              
+              <Link
+                className="block p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                href="/staff-management/leave-requests"
+              >
+                <h3 className="font-semibold text-red-800">Manage Leave Requests</h3>
+                <p className="text-red-600 text-sm">Approve or reject leave applications</p>
+              </Link>
+              
+              <Link
+                className="block p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                href="/staff-management/assign-shift"
+              >
+                <h3 className="font-semibold text-red-800">Assign Shift</h3>
+                <p className="text-red-600 text-sm">Create or modify shift schedule</p>
+              </Link>
+              
+              <Link
+                className="block p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                href="/staff-management/assign-task"
+              >
+                <h3 className="font-semibold text-red-800">Assign Task</h3>
+                <p className="text-red-600 text-sm">Allocate daily tasks to staff</p>
+              </Link>
+              
+              <Link
+                className="block p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                href="/staff-management/upload-salary-slip"
+              >
+                <h3 className="font-semibold text-red-800">Upload Salary Slip</h3>
+                <p className="text-red-600 text-sm">Publish salary slips for staff</p>
+              </Link>
+            </div>
+          </div>
+        </RoleGuard>
+
+        {/* Access Denied Message for non-staff users */}
+        {userRole && !["STAFF", "WATCHMAN", "TECHNICIAN", "SOCIETY_ADMIN", "SUPER_ADMIN"].includes(userRole) && (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-700">
+              Access Denied
+            </h2>
+            <p className="text-gray-600">
+              You don't have permission to access the staff portal. Please contact your administrator.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

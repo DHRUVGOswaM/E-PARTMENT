@@ -17,6 +17,7 @@ export default function JoinSociety() {
   const [societyId , setSocietyId ] = useState('');
   const [role      , setRole      ] = useState('SOCIETY_MEMBER');
   const [phone     , setPhone     ] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   // only for member / owner
   const [buildingId, setBuildingId] = useState('');
@@ -56,8 +57,14 @@ export default function JoinSociety() {
   const submit = async () => {
     if (!societyId) return toast.error('Choose a society first');
     if (!phone.trim()) return toast.error('Mobile number required');
+    
+    // Validate phone number
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return toast.error('Please enter a valid 10-digit mobile number starting with 6-9');
+    }
 
-    if (['HOUSE_OWNER','SOCIETY_MEMBER'].includes(role) && !flatId)
+    if (['HOUSE_OWNER','SOCIETY_MEMBER','TENANT','RESIDENT'].includes(role) && !flatId)
       return toast.error('Select building and flat');
 
     setLoading(true);
@@ -77,8 +84,8 @@ export default function JoinSociety() {
 
   /* ───────────────────────────── UI */
   return (
-    <div className="max-w-lg mx-auto space-y-6 p-6">
-      <h1 className="text-xl font-semibold">Register in a Society</h1>
+    <div className="max-w-lg mx-auto space-y-6 p-4 sm:p-6">
+      <h1 className="text-xl sm:text-2xl font-semibold text-center">Register in a Society</h1>
 
       {/* society */}
       <Field label="Choose Society">
@@ -97,6 +104,8 @@ export default function JoinSociety() {
           <SelectContent>
             <SelectItem value="HOUSE_OWNER">House Owner</SelectItem>
             <SelectItem value="SOCIETY_MEMBER">Society Member</SelectItem>
+            <SelectItem value="TENANT">Tenant</SelectItem>
+            <SelectItem value="RESIDENT">Resident</SelectItem>
             <SelectItem value="STAFF">Staff</SelectItem>
             <SelectItem value="TECHNICIAN">Technician</SelectItem>
             <SelectItem value="WATCHMAN">Watchman</SelectItem>
@@ -106,11 +115,28 @@ export default function JoinSociety() {
 
       {/* phone */}
       <Field label="Mobile number" >
-        <Input value={phone} onChange={e=>setPhone(e.target.value)} />
+        <Input 
+          type="tel"
+          value={phone} 
+          onChange={(e) => {
+            const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length <= 10) {
+              setPhone(value);
+              setPhoneError('');
+              if (value.length === 10 && !/^[6-9]/.test(value)) {
+                setPhoneError('Mobile number must start with 6, 7, 8, or 9');
+              }
+            }
+          }}
+          placeholder="Enter 10-digit mobile number"
+          maxLength={10}
+          className={`w-full ${phoneError ? 'border-red-500' : ''}`}
+        />
+        {phoneError && <p className="text-red-500 text-sm mt-1">{phoneError}</p>}
       </Field>
 
-      {/* building / flat only for owner | member */}
-      {['HOUSE_OWNER','SOCIETY_MEMBER'].includes(role) && (
+      {/* building / flat only for owner | member | tenant | resident */}
+      {['HOUSE_OWNER','SOCIETY_MEMBER','TENANT','RESIDENT'].includes(role) && (
         <>
           <Field label="Select Building">
             <Select value={buildingId} onValueChange={setBuildingId}>
@@ -143,8 +169,8 @@ export default function JoinSociety() {
 
 /* helper component */
 const Field = ({label,children})=>(
-  <div className="space-y-1">
-    <Label>{label}</Label>
+  <div className="space-y-2">
+    <Label className="text-sm font-medium">{label}</Label>
     {children}
   </div>
 );
