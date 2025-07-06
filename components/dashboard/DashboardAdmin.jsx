@@ -87,6 +87,79 @@ export default function DashboardAdmin() {
           />
         </Link>
       </RoleGuard>
+
+      {/* Additional Features for Super Admin */}
+      <RoleGuard roles={["SUPER_ADMIN"]} userRole={userRole}>
+        <Link href="/Facilities">
+          <Section
+            title="Facility Booking"
+            description="Book and manage society facilities."
+          />
+        </Link>
+      </RoleGuard>
+
+      <RoleGuard roles={["SUPER_ADMIN"]} userRole={userRole}>
+        <Link href="/allVisitor">
+          <Section
+            title="Visitor Management"
+            description="Manage visitor entries and approvals."
+          />
+        </Link>
+      </RoleGuard>
+
+      <RoleGuard roles={["SUPER_ADMIN"]} userRole={userRole}>
+        <Link href="/complaints">
+          <Section
+            title="Complaints Management"
+            description="View and manage society complaints."
+          />
+        </Link>
+      </RoleGuard>
+
+      <RoleGuard roles={["SUPER_ADMIN"]} userRole={userRole}>
+        <Link href="/polls">
+          <Section
+            title="Polls & Voting"
+            description="Create and manage society polls."
+          />
+        </Link>
+      </RoleGuard>
+
+      <RoleGuard roles={["SUPER_ADMIN"]} userRole={userRole}>
+        <Link href="/staff-management">
+          <Section
+            title="Staff Management"
+            description="Manage society staff and their tasks."
+          />
+        </Link>
+      </RoleGuard>
+
+      <RoleGuard roles={["SUPER_ADMIN"]} userRole={userRole}>
+        <Link href="/watchman-logs">
+          <Section
+            title="Watchman Activity Logs"
+            description="View logs of all people entering and exiting the society."
+          />
+        </Link>
+      </RoleGuard>
+
+      <RoleGuard roles={["SUPER_ADMIN"]} userRole={userRole}>
+        <Link href="/emergency-contacts">
+          <Section
+            title="Emergency Contacts"
+            description="Manage emergency contact information."
+          />
+        </Link>
+      </RoleGuard>
+
+      <RoleGuard roles={["SUPER_ADMIN"]} userRole={userRole}>
+        <Link href="/notice-board">
+          <Section
+            title="Notice Board"
+            description="Manage society notices and announcements."
+          />
+        </Link>
+      </RoleGuard>
     </>
   );
 }

@@ -12,6 +12,8 @@ export default function AddStaffPage() {
   const [name, setName] = useState("");
   const [staffRole, setStaffRole] = useState("");
   const [salary, setSalary] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // ── fetch current user role ────────────────────────────────
@@ -42,12 +44,19 @@ export default function AddStaffPage() {
   // ── submit handler ────────────────────────────────────────
   const submit = async (e) => {
     e.preventDefault();
+    
+    // Validate phone number before submitting
+    if (phoneNumber && !/^[6-9]\d{9}$/.test(phoneNumber)) {
+      setPhoneError('Please enter a valid 10-digit mobile number starting with 6-9');
+      return;
+    }
+    
     setSubmitting(true);
     try {
       const res = await fetch("/api/staff-management/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, role: staffRole, salary }),
+        body: JSON.stringify({ name, role: staffRole, salary, phoneNumber }),
       });
       if (!res.ok) {
         const { error } = await res.json();
@@ -96,6 +105,29 @@ export default function AddStaffPage() {
             onChange={(e) => setSalary(e.target.value)}
             required
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Phone Number</label>
+          <input
+            type="tel"
+            className={`w-full border rounded p-2 ${phoneError ? 'border-red-500' : ''}`}
+            value={phoneNumber}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+              if (value.length <= 10) {
+                setPhoneNumber(value);
+                setPhoneError('');
+                if (value.length === 10 && !/^[6-9]/.test(value)) {
+                  setPhoneError('Mobile number must start with 6, 7, 8, or 9');
+                }
+              }
+            }}
+            placeholder="Enter 10-digit mobile number"
+            maxLength={10}
+            required
+          />
+          {phoneError && <p className="text-red-500 text-sm mt-1">{phoneError}</p>}
         </div>
 
         <button

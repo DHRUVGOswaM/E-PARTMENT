@@ -37,11 +37,20 @@ const DashboardHouseOwner = () => {
           />
         </Link>
         <Link href="/dashboard/visitor/new">
+        <Section
+          title="Apply for Visitor Pass"
+          description="Apply for visitor entry and manage your visits."
+        />
+      </Link>
+      
+{/*         
+        <Link href="/dashboard/visitor">
           <Section
-            title="Add Visitor"
-            description="Add a new visitor and Share the QR code with your visitor."
+            title="Manage Visitors"
+            description="View and manage all your visitor requests and approvals."
           />
-        </Link>
+        </Link> */}
+        
         <Link href="/pay-with-qr">
         <Section
           title="Pay with UPI QR for Dues"

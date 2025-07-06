@@ -32,6 +32,13 @@ export default function DashboardSocietySecretary() {
         />
       </Link>
 
+      <Link href="/dashboard/visitor/new">
+        <Section
+          title="Apply for Visitor Pass"
+          description="Apply for visitor entry and manage your visits."
+        />
+      </Link>
+
       <Link href="/allVisitor">
         <Section
           title="Visitor Management"
@@ -45,7 +52,6 @@ export default function DashboardSocietySecretary() {
           description="Access accounting, billing, and financial reports."
         />
       </Link>
-
 
       <Link href="/polls">
         <Section
@@ -61,6 +67,26 @@ export default function DashboardSocietySecretary() {
         />
       </Link>
 
+      <Link href="/Facilities">
+        <Section
+          title="Facility Booking"
+          description="Book and manage society facilities."
+        />
+      </Link>
+
+      <Link href="/dashboard/visitor">
+        <Section
+          title="Visitor Management"
+          description="Manage and approve visitor requests."
+        />
+      </Link>
+
+      <Link href="/watchman-logs">
+        <Section
+          title="Activity Logs"
+          description="View watchman logs of all entries and exits."
+        />
+      </Link>
     </>
   );
 }

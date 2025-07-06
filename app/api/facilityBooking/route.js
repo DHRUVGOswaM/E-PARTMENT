@@ -1,6 +1,7 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { hasRouteAccess } from "@/lib/roleAccess";
 
 export async function POST(req) {
   try {
@@ -13,6 +14,25 @@ export async function POST(req) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Allow society admins and super admins to book facilities
+    const isAdmin = ['SUPER_ADMIN', 'SOCIETY_ADMIN', 'SOCIETY_SECRETARY'].includes(user.role);
+    
+    // Check if user has appropriate role for booking facilities
+    if (!isAdmin && !hasRouteAccess(user.role, '/Facilities')) {
+      return NextResponse.json({ 
+        error: "You need to be a society member to book facilities. Please join a society first.",
+        redirectTo: "/join-society"
+      }, { status: 403 });
+    }
+
+    // Check if user is associated with a society (except super admin)
+    if (!isAdmin && !user.societyId) {
+      return NextResponse.json({ 
+        error: "You must be part of a society to book facilities. Please join a society first.",
+        redirectTo: "/join-society"
+      }, { status: 403 });
     }
 
     const body = await req.json();

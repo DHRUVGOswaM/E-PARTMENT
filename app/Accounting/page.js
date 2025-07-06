@@ -614,7 +614,7 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) {
 
 
 // --- Component: MemberReceiptCard (Defined Locally) ---
-function MemberReceiptCard({ payment }) {
+function MemberReceiptCard({ payment, societyInfo }) {
   const receiptRef = useRef();
 
   const downloadReceipt = async () => {
@@ -643,8 +643,8 @@ function MemberReceiptCard({ payment }) {
         
         {/* Branding */}
         <div className="text-center border-b pb-2 mb-2">
-          <h2 className="text-lg font-bold text-blue-700">Greenview Residency</h2>
-          <p className="text-xs text-gray-500">Plot 12, Sector 8, Gurugram, Haryana</p>
+          <h2 className="text-lg font-bold text-blue-700">{societyInfo?.name || 'Society Name'}</h2>
+          <p className="text-xs text-gray-500">{societyInfo?.address || 'Society Address'}</p>
         </div>
 
         {/* Details Grid */}
@@ -751,6 +751,7 @@ useEffect(() => {
     netBalance: 0,
   });
   const [paymentsList, setPaymentsList] = useState([]);
+  const [societyInfo, setSocietyInfo] = useState(null);
 
   // UI states for feature display and modal messages
   const isSubscribed = true;
@@ -872,6 +873,32 @@ useEffect(() => {
     }
   }, [isLoaded, userId, showMessage]); // Dependencies for useCallback: re-create if these values change
 
+
+  // Effect hook to fetch society information
+  useEffect(() => {
+    const fetchSocietyInfo = async () => {
+      if (!isLoaded || !userId) return;
+      
+      try {
+        const res = await fetch('/api/users/me');
+        if (res.ok) {
+          const userData = await res.json();
+          if (userData.societyId) {
+            // Fetch society details
+            const societyRes = await fetch(`/api/society/${userData.societyId}`);
+            if (societyRes.ok) {
+              const societyData = await societyRes.json();
+              setSocietyInfo(societyData);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching society info:', error);
+      }
+    };
+    
+    fetchSocietyInfo();
+  }, [isLoaded, userId]);
 
   // Effect hook to trigger data fetching when Clerk authentication state changes (e.g., user logs in/out)
   useEffect(() => {
@@ -1200,7 +1227,7 @@ useEffect(() => {
           {paymentsList.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {paymentsList.map((payment) => (
-                <MemberReceiptCard key={payment.id} payment={payment} />
+                <MemberReceiptCard key={payment.id} payment={payment} societyInfo={societyInfo} />
               ))}
             </div>
           ) : (

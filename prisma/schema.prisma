@@ -437,6 +437,7 @@ model Staff {
   name         String
   role         String
   salary       Int
+  phoneNumber  String?
   Attendance   Attendance[]
   leave        Leave[]
   Salary       Salary[]

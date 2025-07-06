@@ -21,15 +21,22 @@ export async function POST(req) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { name, role, salary } = await req.json();
-    if (!name || !role || salary === undefined)
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    const { name, role, salary, phoneNumber } = await req.json();
+    if (!name || !role || salary === undefined || !phoneNumber)
+      return NextResponse.json({ error: "Missing fields. Name, role, salary, and phone number are required." }, { status: 400 });
+
+    // Validate phone number format
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      return NextResponse.json({ error: "Please enter a valid 10-digit mobile number starting with 6-9" }, { status: 400 });
+    }
 
     const staff = await db.staff.create({
       data: {
         name,
         role,
         salary: Number(salary),
+        phoneNumber,
         societyId: user.societyId,
         userId: user.id, // link creator
       },

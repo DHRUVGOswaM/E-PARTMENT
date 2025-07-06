@@ -57,9 +57,39 @@ export default function NavbarClient() {
             <Link href="/dashboard" className={baseBtn}>
               Dashboard
             </Link>
-            <Link href="/dashboard/society-admin" className={baseBtn}>
-              Society Admin
-            </Link>
+            <div className="relative group">
+              <button className={`${baseBtn} flex items-center gap-1`}>
+                Society Admin
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="py-1">
+                  <Link href="/dashboard/society-admin" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Society Admin Panel
+                  </Link>
+                  <Link href="/watchman-logs" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Activity Logs
+                  </Link>
+                  <Link href="/staff-management" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Staff Management
+                  </Link>
+                  <Link href="/allVisitor" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Visitor Management
+                  </Link>
+                  <Link href="/Facilities" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Facility Booking
+                  </Link>
+                  <Link href="/polls" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Polls & Voting
+                  </Link>
+                  <Link href="/Accounting" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Financial Management
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <Link href="/dashboard" className={baseBtn}>
@@ -141,7 +171,24 @@ export default function NavbarClient() {
               </Link>
             ))}
 
-            {isSignedIn && <div className="mt-4">{renderDashboardLink()}</div>}
+            {isSignedIn && (
+              <div className="mt-4">
+                {renderDashboardLink()}
+                {dbUser?.role === "SOCIETY_ADMIN" && (
+                  <div className="mt-2 space-y-2">
+                    <Link href="/watchman-logs" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md">
+                      Activity Logs
+                    </Link>
+                    <Link href="/Facilities" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md">
+                      Facility Booking
+                    </Link>
+                    <Link href="/dashboard/visitor" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md">
+                      Visitor Management
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
 
             {isSignedIn ? (
               <div className="mt-2 flex justify-center">
