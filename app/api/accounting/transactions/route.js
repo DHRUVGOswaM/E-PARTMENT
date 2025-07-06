@@ -120,7 +120,14 @@ export async function POST(request) {
       chequeNumber
     } = body;
 
-   let newPaymentMethod = paymentMethod?.toUpperCase() || null;
+const paymentMethodMap = {
+  "Cash": "CASH",
+  "UPI": "UPI",
+  "Bank Transfer": "BANK_TRANSFER",
+  "Cheque": "CHEQUE"
+};
+
+const mappedPaymentMethod = paymentMethodMap[paymentMethod] || null;
 
     // Validation
     if (!amount || !type || !["INCOME", "EXPENSE"].includes(type)) {
@@ -138,27 +145,26 @@ export async function POST(request) {
     }
 
     const newTransaction = await db.transaction.create({
-      data: {
-        amount: parseFloat(amount),
-        type,
-        category: category || null,
-        description: description || null,
-        transactionDate: new Date(transactionDate),
-        paymentMethod: newPaymentMethod || null,
-        payerName: payerName || null,
-        flatNumber: flatNumber || null,
-        forMonth: forMonth || null,
-        paidStatus: paidStatus ?? null,
-        recorderId: prismaUserId,
+  data: {
+    amount: parseFloat(amount),
+    type,
+    category: category || null,
+    description: description || null,
+    transactionDate: new Date(transactionDate),
+    paymentMethod: mappedPaymentMethod,
+    payerName: payerName || null,
+    flatNumber: flatNumber || null,
+    forMonth: forMonth || null,
+    paidStatus: paidStatus ?? null,
+    bankName: bankName || null,
+    ifscCode: ifscCode || null,
+    transactionId: transactionId || null,
+    upiId: upiId || null,
+    chequeNumber: chequeNumber || null,
+    recorderId: prismaUserId,
+  },
+});
 
-        // ✅ Add new fields for payment method details
-        bankName: bankName || "",
-        ifscCode: ifscCode || "",
-        transactionId: transactionId || "",
-        upiId: upiId || "",
-        chequeNumber: chequeNumber || "",
-      },
-    });
 
     console.log("✅ Transaction created successfully:", newTransaction);
     return NextResponse.json(newTransaction, { status: 201 });

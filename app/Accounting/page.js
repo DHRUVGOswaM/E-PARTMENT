@@ -1178,7 +1178,7 @@ useEffect(() => {
   )}
 
   {/* EXPENSE FORM - only for ADMIN and SUPER_ADMIN */}
-  <RoleGuard roles={['ADMIN', 'SUPER_ADMIN']} userRole={role}>
+  <RoleGuard roles={['SOCIETY_ADMIN', 'SUPER_ADMIN']} userRole={role}>
     <div>
       <h3 className="text-2xl font-bold text-gray-800 mb-5">Log New Expense</h3>
       <AddExpenseForm
