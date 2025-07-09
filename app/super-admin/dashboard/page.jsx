@@ -37,18 +37,18 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  const handleApproval = async (id, action) => {
+  const handleApproval = async (id, action, amount = null) => {
     try {
       const res = await fetch("/api/society-admin/approve", {
         method: "POST",
-        body: JSON.stringify({ id, action }),
-        headers: { "Content-Type": "application/json" }, // Moved headers here
+        body: JSON.stringify({ id, action, amount }),
+        headers: { "Content-Type": "application/json" },
       });
       const data = await res.json();
 
       if (res.ok) {
         toast.success(data.message);
-        fetchRequests(); // Re-fetch the list to show the update
+        fetchRequests();
       } else {
         toast.error(data.error || "Action failed");
       }
@@ -56,6 +56,8 @@ export default function SuperAdminDashboard() {
       toast.error("Something went wrong");
     }
   };
+  
+  
 
   return (
     <div className="p-6">
@@ -84,17 +86,41 @@ export default function SuperAdminDashboard() {
                 <p>
                   <strong>Total Flats:</strong> {req.totalFlats}
                 </p>
-                <div className="flex gap-4 pt-2">
-                  <Button onClick={() => handleApproval(req.id, "APPROVE")}>
-                    Approve ✅
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleApproval(req.id, "REJECT")}
-                  >
-                    Reject ❌
-                  </Button>
-                </div>
+                {!req.finalQuote ? (
+                  <div className="flex flex-col gap-2 pt-4">
+                    <input
+                      type="number"
+                      placeholder="Final Quote Amount"
+                      className="border rounded px-3 py-2 w-1/2"
+                      onChange={(e) => (req.finalQuote = e.target.value)}
+                    />
+                    <Button
+                      onClick={() =>
+                        handleApproval(req.id, "QUOTE", req.finalQuote)
+                      }
+                      className="w-max"
+                    >
+                      Send Quote 💬
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="pt-2">
+                    <p>
+                      <strong>Quoted Amount:</strong> ₹{req.finalQuote}
+                    </p>
+                    <div className="flex gap-4 pt-2">
+                      <Button onClick={() => handleApproval(req.id, "APPROVE")}>
+                        Approve ✅
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleApproval(req.id, "REJECT")}
+                      >
+                        Reject ❌
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

@@ -15,7 +15,7 @@ export async function POST(req) {
       where: {clerkUserId: userId},
     })
 
-    const body = await req.json(); // { amount: 299 }
+    const {amount, mode, requestedId} = await req.json(); // { amount: 299 }
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
@@ -24,7 +24,7 @@ export async function POST(req) {
 
 
     const order = await razorpay.orders.create({
-      amount: body.amount * 100, // amount in paise
+      amount: amount * 100, // amount in paise
       currency: "INR",
       notes: { for: "society-subscription" },
     });
@@ -34,9 +34,10 @@ export async function POST(req) {
       data: {
         userId: user.id,
         rzOrderId: order.id,
-        amount: body.amount,
-        amountDisplay: `₹${body.amount}.00`,
+        amount: amount,
+        amountDisplay: `₹${amount}.00`,
         purpose: "Society Subscription",
+
       },
     });
 

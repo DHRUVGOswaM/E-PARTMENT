@@ -66,60 +66,86 @@ export default function AdminRequestForm() {
     return form.apartmentName && form.address && form.phoneNumber && phoneRegex.test(form.phoneNumber);
   };
 
-  const payAndSubmit = async () => {
-    if (!isFormValid()) {
-      toast.error("Fill all required fields");
-      return;
-    }
+  // const payAndSubmit = async () => {
+  //   if (!isFormValid()) {
+  //     toast.error("Fill all required fields");
+  //     return;
+  //   }
 
-    setLoading(true);
-    try {
-      const orderRes = await fetch("/api/payments/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: SUBSCRIPTION_FEE }),
-      });
-      if (!orderRes.ok) throw new Error("Order create failed");
-      const order = await orderRes.json();
+  //   setLoading(true);
+  //   try {
+  //     const orderRes = await fetch("/api/payments/order", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ amount: SUBSCRIPTION_FEE }),
+  //     });
+  //     if (!orderRes.ok) throw new Error("Order create failed");
+  //     const order = await orderRes.json();
 
-      // @ts-ignore
-      const razorpay = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        order_id: order.id,
-        amount: order.amount,
-        currency: order.currency,
-        name: "E-Partment",
-        description: "Society subscription",
-        prefill: { contact: form.phoneNumber, email: user?.email },
-        handler: async (resp) => {
-          const verify = await fetch("/api/payments/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...resp,
-              formData: form,
-            }),
-          });
-          if (verify.ok) {
-            toast.success("Payment successful – request submitted!");
-            router.push("/dashboard");
-          } else {
-            toast.error("Verification failed – contact support");
-          }
-          setLoading(false);
-        },
-        modal: { ondismiss: () => setLoading(false) },
-        theme: { color: "#0d9488" },
-      });
+  //     // @ts-ignore
+  //     const razorpay = new window.Razorpay({
+  //       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  //       order_id: order.id,
+  //       amount: order.amount,
+  //       currency: order.currency,
+  //       name: "E-Partment",
+  //       description: "Society subscription",
+  //       prefill: { contact: form.phoneNumber, email: user?.email },
+  //       handler: async (resp) => {
+  //         const verify = await fetch("/api/payments/verify", {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({
+  //             ...resp,
+  //             formData: form,
+  //           }),
+  //         });
+  //         if (verify.ok) {
+  //           toast.success("Payment successful – request submitted!");
+  //           router.push("/dashboard");
+  //         } else {
+  //           toast.error("Verification failed – contact support");
+  //         }
+  //         setLoading(false);
+  //       },
+  //       modal: { ondismiss: () => setLoading(false) },
+  //       theme: { color: "#0d9488" },
+  //     });
 
-      razorpay.open();
-    } catch (err) {
-      toast.error(err.message || "Error starting payment");
-      setLoading(false);
-    }
-  };
+  //     razorpay.open();
+  //   } catch (err) {
+  //     toast.error(err.message || "Error starting payment");
+  //     setLoading(false);
+  //   }
+  // };
 
-  const handleQrFlow = async () => {
+  // const handleQrFlow = async () => {
+  //   if (!isFormValid()) {
+  //     toast.error("Fill all required fields");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   try {
+  //     const res = await fetch("/api/society-admin/request", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(form),
+  //     });
+
+  //     if (!res.ok) throw new Error("Could not initiate manual payment");
+
+
+  //     toast.success("Request submitted — scan QR to pay");
+  //     router.push("/pay-with-qr-for-admin");
+  //   } catch (err) {
+  //     toast.error(err.message || "Failed to initiate manual payment");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const handleRequestCallback = async () => {
     if (!isFormValid()) {
       toast.error("Fill all required fields");
       return;
@@ -130,27 +156,28 @@ export default function AdminRequestForm() {
       const res = await fetch("/api/society-admin/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, mode: "CALLBACK" }),
       });
 
-      if (!res.ok) throw new Error("Could not initiate manual payment");
-
-
-      toast.success("Request submitted — scan QR to pay");
-      router.push("/pay-with-qr-for-admin");
+      if (!res.ok) throw new Error("Could not submit request");
+      toast.success("Request submitted! We'll contact you shortly.");
+      router.push("/dashboard");
     } catch (err) {
-      toast.error(err.message || "Failed to initiate manual payment");
+      toast.error(err.message || "Request failed");
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
 
       <div className="max-w-xl mx-auto p-4 sm:p-6 space-y-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-center">🏢 Request Admin Access</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-center">
+          🏢 Request Admin Access
+        </h1>
 
         {user && (
           <>
@@ -181,7 +208,7 @@ export default function AdminRequestForm() {
               />
             </div>
           ))}
-          
+
           {/* Phone Number with validation */}
           <div>
             <Label htmlFor="phoneNumber">Phone Number</Label>
@@ -193,13 +220,15 @@ export default function AdminRequestForm() {
               value={form.phoneNumber}
               onChange={handleChange}
               maxLength={10}
-              className={phoneError ? 'border-red-500' : ''}
+              className={phoneError ? "border-red-500" : ""}
             />
-            {phoneError && <p className="text-red-500 text-sm mt-1">{phoneError}</p>}
+            {phoneError && (
+              <p className="text-red-500 text-sm mt-1">{phoneError}</p>
+            )}
           </div>
         </div>
 
-        <Button onClick={payAndSubmit} disabled={loading} className="w-full">
+        {/* <Button onClick={payAndSubmit} disabled={loading} className="w-full">
           {loading ? "Redirecting…" : `Pay ₹${SUBSCRIPTION_FEE} via Razorpay`}
         </Button>
 
@@ -207,6 +236,14 @@ export default function AdminRequestForm() {
 
         <Button onClick={handleQrFlow} variant="outline" className="w-full">
           Scan QR to Pay with UPI
+        </Button> */}
+
+        <Button
+          onClick={handleRequestCallback}
+          disabled={loading}
+          className="w-full"
+        >
+          {loading ? "Submitting..." : `Request a Callback`}
         </Button>
       </div>
     </>

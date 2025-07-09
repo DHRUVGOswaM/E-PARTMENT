@@ -36,6 +36,13 @@ const DashboardDefault = () => {
           description="Apply for society admin privileges."
         />
       </Link>
+
+      <Link href="/society-admin/payment">
+        <Section
+          title="Proceed to Pay the Fee"
+          description="If you have been approved as a society admin, please proceed to pay the fee."
+        />
+      </Link>
     </>
   );
 }

@@ -1,10 +1,11 @@
-"use client";
+"use client"
 
+// app/(your-app-path)/StaffCenter.jsx
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import toast from "react-hot-toast";
-import { Loader2, Trash } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function StaffCenter() {
   const [loading, setLoading] = useState(true);
@@ -25,22 +26,25 @@ export default function StaffCenter() {
     })();
   }, []);
 
-  const deleteStaff = async (id) => {
-    if (!window.confirm("Delete this staff member?")) return;
+  const updateStatus = async (id, newStatus) => {
     try {
-      const res = await fetch(`/api/staff-management/staff?id=${id}`, {
-        method: "DELETE",
+      const res = await fetch("/api/staff-management/staff", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus }),
       });
+
       if (res.ok) {
-        toast.success("Staff removed");
-        setStaff((cur) => cur.filter((s) => s.id !== id));
+        toast.success("Status updated");
+        setStaff((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s))
+        );
       } else {
         const { error } = await res.json();
-        toast.error(error || "Delete failed");
+        toast.error(error || "Failed to update status");
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Error deleting staff");
+      toast.error("Error updating status");
     }
   };
 
@@ -63,7 +67,6 @@ export default function StaffCenter() {
         </CardContent>
       </Card>
 
-      {/* Vertical List Format */}
       <div className="space-y-4">
         {staff.map((s) => {
           const latestSalary = s.Salary[0];
@@ -78,6 +81,17 @@ export default function StaffCenter() {
                       <span className="font-medium text-black">{s.role}</span>
                     </p>
                     <p className="text-sm text-muted-foreground">
+                      Status:{" "}
+                      <select
+                        value={s.status}
+                        onChange={(e) => updateStatus(s.id, e.target.value)}
+                        className="border px-2 py-1 rounded-md text-sm"
+                      >
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="NON_ACTIVE">INACTIVE</option>
+                      </select>
+                    </p>
+                    <p className="text-sm text-muted-foreground">
                       Current Salary: ₹
                       {latestSalary ? latestSalary.amount : s.salary}
                     </p>
@@ -88,15 +102,6 @@ export default function StaffCenter() {
                       </p>
                     )}
                   </div>
-
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    className="cursor-pointer"
-                    onClick={() => deleteStaff(s.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
                 </div>
               </CardContent>
             </Card>

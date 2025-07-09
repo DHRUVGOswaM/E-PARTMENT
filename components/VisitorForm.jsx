@@ -34,7 +34,10 @@ export default function VisitorForm({ onSuccess }) {
           setPhoneError('Mobile number must start with 6, 7, 8, or 9');
         }
       }
-    } else {
+    } else if (name === 'name') {
+      const onlyLetters = value.replace(/[^a-zA-Z\s]/g, ''); // Allow letters and spaces
+      setFormData({ ...formData, [name]: onlyLetters });
+    }else {
       setFormData({ ...formData, [name]: value });
     }
   };
@@ -79,6 +82,7 @@ export default function VisitorForm({ onSuccess }) {
       setLoading(false);
     }
   };
+  
   
 
   return (

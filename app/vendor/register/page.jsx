@@ -106,7 +106,11 @@ export default function VendorRegisterPage() {
                           setContactError('Mobile number must start with 6, 7, 8, or 9');
                         }
                       }
-                    } else {
+                    } else if (field === 'name') {
+                      const onlyLetters = value.replace(/[^a-zA-Z\s]/g, ""); // Letters + space
+                      setForm({ ...form, [field]: onlyLetters });
+                    }
+                    else {
                       setForm({ ...form, [field]: value });
                     }
                   }}

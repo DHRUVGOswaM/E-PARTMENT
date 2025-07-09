@@ -42,6 +42,7 @@ model User {
   feedbacks        Feedback[]
   staff            Staff[]
   paymentLogs      PaymentLog[]
+  pendingAdmins    PendingAdmin[]
 
   @@map("users")
 }
@@ -316,6 +317,9 @@ model PendingAdmin {
   address            String
   registrationNumber String
   phoneNumber        String
+  quotedAmount       Float?
+  appliedByUserId   String?
+  appliedByUser     User?              @relation(fields: [appliedByUserId], references: [id])
   paymentLog         PaymentLog[]
 
   @@map("pending_admins")
@@ -340,6 +344,7 @@ model PendingAccess {
 }
 
 // TRANSACTIONS///
+// TRANSACTIONS///
 model Transaction {
   id              String          @id @default(uuid())
   amount          Float
@@ -361,6 +366,10 @@ model Transaction {
   flatNumber String?  @map("flat_number")
   forMonth   String?  @map("for_month")
   paidStatus Boolean? @default(true) @map("paid_status")
+  
+  isApproved      Boolean         @default(false) @map("is_approved") // ✅ NEW FIELD
+  approvedBy   String?                      // Admin userId
+  approvedAt   DateTime?                   // Timestamp when approved
 
   flatId String?
   flat   Flat?   @relation("FlatTransactions", fields: [flatId], references: [id])
@@ -444,6 +453,7 @@ model Staff {
   shift        Shift[]
   leaveRequest leaveRequest[]
   watchmanLog  EntryLog[]
+  staffRole     staffRole  @default(ACTIVE)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   societyId    String
@@ -611,6 +621,7 @@ enum AdminRequestStatus {
   PENDING
   APPROVED
   REJECTED
+  QUOTED
 }
 
 enum TransactionType {
@@ -632,4 +643,9 @@ enum PaymentMethod {
   CHEQUE
   BANK_TRANSFER
   ONLINE_PAYMENT
+}
+
+enum staffRole {
+  ACTIVE 
+  NON_ACTIVE
 }

@@ -20,7 +20,7 @@ export async function POST(req) {
 
     // Find society secretary
     const secretary = user.society.users.find(
-      (u) => u.role === "SOCIETY_SECRETARY"
+      (u) => u.role === "SOCIETY_ADMIN"
     );
 
     if (!secretary) throw new Error("No society secretary found");

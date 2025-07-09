@@ -10,7 +10,7 @@ export async function GET() {
     include: { society: true },
   });
 
-  if (!secretary || secretary.role !== "SOCIETY_SECRETARY") {
+  if (!secretary || secretary.role !== "SOCIETY_ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

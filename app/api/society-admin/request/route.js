@@ -41,15 +41,16 @@ export async function POST(req) {
         apartmentName: body.apartmentName,
         totalFlats: parseInt(body.totalFlats),
         status: "PENDING",
+        quotedAmount: null,
+        appliedByUserId: loggedInUser.id, // Link to the user who applied
       },
     });
 
     return NextResponse.json({
-      message: "Admin request submitted successfully",
+      message: "Callback request created successfully.",
       pendingAdmin,
     });
   } catch (error) {
-    console.error("Error in POST /api/society-admin/request:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

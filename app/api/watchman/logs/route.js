@@ -9,20 +9,20 @@ async function currentWatchman() {
   if (!clerkUserId) return null;
 
   const user = await db.user.findUnique({ where: { clerkUserId } });
-    if (!user || user.role !== "WATCHMAN") return null;
-    
-    console.log("Current Watchman:", user);
+  if (!user || user.role !== "WATCHMAN") return null;
+
+  console.log("Current Watchman:", user);
 
   // link watchman staff row (optional)
   const staff = await db.staff.findFirst({
     where: { userId: user.id, role: "WATCHMAN" },
   });
 
-    console.log("Associated Staff:", staff);
+  console.log("Associated Staff:", staff);
   return { user, staff };
 }
 
-// ── GET (list today’s open logs) ─────────────────────────
+// ── GET (list today's open logs) ─────────────────────────
 export async function GET() {
   const ctx = await currentWatchman();
   if (!ctx) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -47,21 +47,88 @@ export async function POST(req) {
   const ctx = await currentWatchman();
   if (!ctx) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { personType, personName, vehicleNumber } = await req.json();
-  if (!personType || !personName)
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  try {
+    const body = await req.json();
+    console.log("Received request body:", body);
 
-  const log = await db.entryLog.create({
-    data: {
+    const { personType, personName, personId, vehicleNumber } = body;
+
+    // Validate required fields
+    if (!personType) {
+      return NextResponse.json(
+        { error: "personType is required" },
+        { status: 400 }
+      );
+    }
+
+    // For residents, we need either personName or personId
+    let finalPersonName = personName;
+
+    if (personType === "RESIDENT") {
+      if (!personName && !personId) {
+        return NextResponse.json(
+          { error: "Either personName or personId is required for residents" },
+          { status: 400 }
+        );
+      }
+
+      // If we have personId but no personName, fetch the resident's name
+      if (personId && !personName) {
+        const resident = await db.user.findUnique({
+          where: { id: personId },
+          select: { name: true, email: true },
+        });
+
+        if (!resident) {
+          return NextResponse.json(
+            { error: "Resident not found" },
+            { status: 404 }
+          );
+        }
+
+        finalPersonName =
+          resident.name || resident.email || `Resident ${personId}`;
+      }
+    } else {
+      // For non-residents, personName is required
+      if (!personName) {
+        return NextResponse.json(
+          { error: "personName is required" },
+          { status: 400 }
+        );
+      }
+    }
+
+    console.log("Creating entry log with:", {
       personType,
-      personName,
+      personName: finalPersonName,
       vehicleNumber,
       societyId: ctx.user.societyId,
-      watchmanId: ctx.staff?.id ?? ctx.user.id, // fallback
-    },
-  });
+      watchmanId: ctx.staff?.id ?? ctx.user.id,
+    });
 
-  return NextResponse.json(log, { status: 201 });
+    const log = await db.entryLog.create({
+      data: {
+        personType,
+        personName: finalPersonName,
+        vehicleNumber: vehicleNumber || null,
+        societyId: ctx.user.societyId,
+        watchmanId: ctx.staff?.id ?? ctx.user.id, // fallback
+      },
+    });
+
+    console.log("Created entry log:", log);
+    return NextResponse.json(log, { status: 201 });
+  } catch (error) {
+    console.error("Error creating entry log:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error.message,
+      },
+      { status: 500 }
+    );
+  }
 }
 
 // ── PATCH (mark OUT)  expects ?id=<entryLogId> ───────────
@@ -72,10 +139,21 @@ export async function PATCH(req) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  const updated = await db.entryLog.update({
-    where: { id },
-    data: { outTime: new Date() },
-  });
+  try {
+    const updated = await db.entryLog.update({
+      where: { id },
+      data: { outTime: new Date() },
+    });
 
-  return NextResponse.json(updated);
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Error updating entry log:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error.message,
+      },
+      { status: 500 }
+    );
+  }
 }

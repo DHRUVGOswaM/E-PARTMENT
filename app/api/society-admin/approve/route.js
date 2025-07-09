@@ -7,25 +7,31 @@ export async function POST(req) {
         const { userId } = await auth();
         if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-        const superAdmin = await db.user.findUnique({ where: { clerkUserId: userId } });
-        if (superAdmin.role !== "SUPER_ADMIN") {
-            return new NextResponse("Forbidden", { status: 403 });
-        }
-
-        const { id, action } = await req.json();
+      const user = await db.user.findUnique({ where: { clerkUserId: userId } });
+        
+        const { id, action, amount } = await req.json();
         const request = await db.pendingAdmin.findUnique({
             where: { id },
 
         })
         if (!request) {
             return new NextResponse("Request not found", { status: 404 });
-        }
+      }
 
-        if (action === "APPROVE") {
-          //check if user exitsts
-          const user = await db.user.findUnique({
-            where: { email: request.email },
-          });
+      const finalAmount = parseFloat(amount);
+      
+      if (action === "QUOTE") {
+        await db.pendingAdmin.update({
+          where: { id },
+          data: {
+            status: "QUOTED",
+            quotedAmount: finalAmount,
+          },
+        });
+        return NextResponse.json({ message: "Quoted Amount Sent to Applicant" }, { status: 200 });
+      }
+      if (action === "APPROVE") {
+         
           if (!user) return new NextResponse("User not found", { status: 404 });
 
           //create new society

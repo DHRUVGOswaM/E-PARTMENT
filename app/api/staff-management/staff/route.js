@@ -42,7 +42,8 @@ export async function GET() {
 
 // ───────────────────────────────────────────────────────── DELETE
 // delete a single staff => ?id=<staffId>
-export async function DELETE(req) {
+// app/api/staff-management/staff/route.js
+export async function PATCH(req) {
   try {
     const user = await currentUser();
     if (!user)
@@ -51,21 +52,30 @@ export async function DELETE(req) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const staffId = req.nextUrl.searchParams.get("id");
-    if (!staffId) {
-      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const { id, status } = await req.json();
+
+    if (!id || !status) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // ensure staff belongs to same society
-    const staff = await db.staff.findUnique({ where: { id: staffId } });
+    // Check if the staff belongs to the same society
+    const staff = await db.staff.findUnique({
+      where: { id },
+    });
+
     if (!staff || staff.societyId !== user.societyId) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    await db.staff.delete({ where: { id: staffId } });
+    await db.staff.update({
+      where: { id },
+      data: { staffRole: status },
+    });
+
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("DELETE staff error:", err);
+    console.error("PATCH staff error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
