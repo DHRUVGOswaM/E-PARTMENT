@@ -13,6 +13,7 @@ import domtoimage from "dom-to-image-more";
 import { jsPDF } from "jspdf";
 
 
+
 // Clerk client-side hooks for authentication status and user details
 import { useAuth, useUser } from '@clerk/nextjs';
 
@@ -365,7 +366,11 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) {
 
   if (paymentMethod === "UPI" && !upiId && !transactionId) {
       showMessage("Please enter UPI ID.", "error");
-      return;
+      if (!transactionId) {
+        showMessage("Please enter transaction ID.", "error");
+        return;
+      }
+      
     }
      if (paymentMethod === "Online Payment" && !transactionId) {
       showMessage("Please enter transaction ID.", "error");
@@ -389,6 +394,8 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) {
         email: userEmail,
         ifscCode: paymentMethod === "Bank Transfer" ? ifscCode : null,
         transactionId: paymentMethod === "Bank Transfer" ? transactionId : null,
+        transactionId: paymentMethod === "Online Payment" ? transactionId : null,
+        transactionId: paymentMethod === "UPI" ? transactionId : null,
         upiId: paymentMethod === "UPI" ? upiId : null,
       });
 
@@ -614,100 +621,116 @@ function AddPaymentForm({ onSubmit, showMessage, userEmail }) {
 
 
 // --- Component: MemberReceiptCard (Defined Locally) ---
-function MemberReceiptCard({ payment, societyInfo }) {
-  const receiptRef = useRef();
+// function MemberReceiptCard({ payment, societyInfo }) {
+//   const receiptRef = useRef();
 
-  const downloadReceipt = async () => {
-    if (!payment.paidStatus) return;
+//   const downloadReceipt = async () => {
+//     if (!payment.paidStatus) return;
 
-    const element = receiptRef.current;
+//     const element = receiptRef.current;
 
-    try {
-      const blob = await domtoimage.toPng(element);
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgProps = pdf.getImageProperties(blob);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+//     try {
+//       const blob = await domtoimage.toPng(element);
+//       const pdf = new jsPDF("p", "mm", "a4");
+//       const imgProps = pdf.getImageProperties(blob);
+//       const pdfWidth = pdf.internal.pageSize.getWidth();
+//       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-      pdf.addImage(blob, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Receipt_${payment.payerName || 'Unknown'}_${payment.forMonth || 'NoMonth'}.pdf`);
-    } catch (error) {
-      console.error("❌ PDF generation error:", error);
-    }
-  };
+//       pdf.addImage(blob, "PNG", 0, 0, pdfWidth, pdfHeight);
+//       pdf.save(`Receipt_${payment.payerName || 'Unknown'}_${payment.forMonth || 'NoMonth'}.pdf`);
+//     } catch (error) {
+//       console.error("❌ PDF generation error:", error);
+//     }
+//   };
 
-  return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6 border border-gray-300 text-sm">
-      {/* Receipt Content */}
-      <div ref={receiptRef} className="space-y-4 font-sans text-gray-700">
+//   return (
+//     <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6 border border-gray-300 text-sm">
+//       {/* Receipt Content */}
+//       <div ref={receiptRef} className="space-y-4 font-sans text-gray-700">
         
-        {/* Branding */}
-        <div className="text-center border-b pb-2 mb-2">
-          <h2 className="text-lg font-bold text-blue-700">{societyInfo?.name || 'Society Name'}</h2>
-          <p className="text-xs text-gray-500">{societyInfo?.address || 'Society Address'}</p>
-        </div>
+//         {/* Branding */}
+//         <div className="text-center border-b pb-2 mb-2">
+//           <h2 className="text-lg font-bold text-blue-700">{societyInfo?.name || 'Society Name'}</h2>
+//           <p className="text-xs text-gray-500">{societyInfo?.address || 'Society Address'}</p>
+//         </div>
 
-        {/* Details Grid */}
-        <div className="grid grid-cols-2 gap-y-2">
-          <div className="font-medium">Name:</div>
-          <div>{payment.payerName || "—"}</div>
+//         {/* Details Grid */}
+//         <div className="grid grid-cols-2 gap-y-2">
+//           <div className="font-medium">Name:</div>
+//           <div>{payment.payerName || "—"}</div>
 
-          <div className="font-medium">Flat No.:</div>
-          <div>{payment.flatNumber || "—"}</div>
+//           <div className="font-medium">Flat No.:</div>
+//           <div>{payment.flatNumber || "—"}</div>
 
-          <div className="font-medium">Month:</div>
-          <div>{payment.forMonth || "—"}</div>
+//           <div className="font-medium">Month:</div>
+//           <div>{payment.forMonth || "—"}</div>
 
-          <div className="font-medium">Amount:</div>
-          <div>₹{payment.amount || "—"}</div>
+//           <div className="font-medium">Amount:</div>
+//           <div>₹{payment.amount || "—"}</div>
 
-          <div className="font-medium">Method:</div>
-          <div>{payment.paymentMethod || "—"}</div>
+//           <div className="font-medium">Method:</div>
+//           <div>{payment.paymentMethod || "—"}</div>
 
-          <div className="font-medium">Receipt ID:</div>
-          <div>{payment.transactionId || "—"}</div>
-        </div>
+//           <div className="font-medium">Receipt ID:</div>
+//           <div>{payment.transactionId || "—"}</div>
+//         </div>
 
-        {/* Payment Status */}
-        {payment.paidStatus && (
-          <div className="mt-3 text-green-600 font-semibold border border-green-500 bg-green-50 rounded px-3 py-1 w-fit">
-            ✅ Payment Received
-          </div>
-        )}
+//         {/* Payment Status */}
+//         {payment.paidStatus && (
+//           <div className="mt-3 text-green-600 font-semibold border border-green-500 bg-green-50 rounded px-3 py-1 w-fit">
+//             ✅ Payment Received
+//           </div>
+//         )}
 
-        {/* Date */}
-        {payment.transactionDate && (
-          <p className="text-xs text-gray-500">
-            Paid on:{" "}
-            {new Date(payment.transactionDate).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
-        )}
+//         {/* Date */}
+//         {payment.transactionDate && (
+//           <p className="text-xs text-gray-500">
+//             Paid on:{" "}
+//             {new Date(payment.transactionDate).toLocaleDateString("en-IN", {
+//               day: "numeric",
+//               month: "long",
+//               year: "numeric",
+//             })}
+//           </p>
+//         )}
 
-        {/* Thank You Note */}
-        <p className="text-center text-xs text-gray-500 mt-4">
-          Thank you for your payment!
-        </p>
-      </div>
+//         {/* Thank You Note */}
+//         <p className="text-center text-xs text-gray-500 mt-4">
+//           Thank you for your payment!
+//         </p>
+//       </div>
 
-      {/* Button */}
-      <button
-        className={`mt-4 w-full py-2 px-4 rounded text-white text-sm font-medium transition ${
-          payment.paidStatus
-            ? "bg-blue-600 hover:bg-blue-700"
-            : "bg-gray-300 cursor-not-allowed"
-        }`}
-        disabled={!payment.paidStatus}
-        onClick={downloadReceipt}
-      >
-        Download Receipt
-      </button>
-    </div>
-  );
-}
+//       {/* Button */}
+//       <>
+//       <button
+//        className={`mt-4 w-full py-2 px-4 rounded text-white text-sm font-medium transition ${
+//          payment.isApproved && payment.paidStatus
+//            ? "bg-blue-600 hover:bg-blue-700"
+//            : "bg-gray-300 cursor-not-allowed"
+//        }`}
+//        disabled={!payment.paidStatus || !payment.isApproved}
+//        onClick={downloadReceipt}
+//        title={
+//          !payment.paidStatus
+//            ? "Payment not completed"
+//            : !payment.isApproved
+//            ? "Pending admin approval"
+//            : "Download your receipt"
+//        }
+//       >
+//         Download Receipt
+//       </button>
+
+//      {(!payment.paidStatus || !payment.isApproved) && (
+//       <p className="text-xs text-red-500 mt-2 text-center">
+//          Receipt will be available after admin approval.
+//        </p>
+//       )}
+//      </>
+
+//     </div>
+//   );
+// }
 
 
 
@@ -1221,22 +1244,9 @@ useEffect(() => {
 
         {/* Member Receipts Section */}
       {role !== 'VISITOR' && (
-        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 space-y-6">
-          <h2 className="text-2xl font-bold text-gray-800">Member Payment Receipts</h2>
-          <p className="text-gray-600 max-w-2xl">View and download payment receipts for members. This section automatically updates with new payments.</p>
-          {paymentsList.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paymentsList.map((payment) => (
-                <MemberReceiptCard key={payment.id} payment={payment} societyInfo={societyInfo} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-48 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-              <p>No payment receipts available yet. Add a new payment above!</p>
-            </div>
-          )}
-        </div>
-      )}
+  <ReceiptTable societyInfo={societyInfo} />
+)}
+  
         {/* Back to Dashboard Link */}
         <div className="text-center mt-10">
           <Link href="/dashboard" className="text-blue-600 font-medium hover:underline text-lg">
@@ -1244,6 +1254,204 @@ useEffect(() => {
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+// --- MemberReceiptCard Component ---
+// import { useEffect, useState } from "react";
+// import domtoimage from "dom-to-image";
+// import jsPDF from "jspdf";
+
+function ReceiptTable({ societyInfo }) {
+  const [receipts, setReceipts] = useState([]);
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [flatFilter, setFlatFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const receiptsPerPage = 6;
+
+  const fetchReceipts = async () => {
+    try {
+      const query = new URLSearchParams();
+      if (month) query.append("month", month);
+      if (year) query.append("year", year);
+      if (flatFilter) query.append("flat", flatFilter);
+      const res = await fetch(`/api/accounting/approve-transaction?${query.toString()}`);
+      const data = await res.json();
+      setReceipts(data);
+      setCurrentPage(1);
+    } catch (e) {
+      console.error("Failed to fetch receipts", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchReceipts();
+  }, [month, year, flatFilter]);
+
+
+  const download = async (payment) => {
+  const receiptNode = document.createElement("div");
+  receiptNode.style.position = "absolute";
+  receiptNode.style.top = "-9999px"; // hide off-screen
+  receiptNode.style.padding = "24px";
+  receiptNode.style.fontFamily = "Arial, sans-serif";
+  receiptNode.style.width = "600px"; // maintain consistent width
+
+  receiptNode.innerHTML = `
+    <div style="border:1px solid #ccc; padding: 20px;">
+      <h2 style="text-align: center; color: #2563eb; margin: 0;">${societyInfo?.name || "Society Name"}</h2>
+      <p style="text-align: center; margin: 0; font-size: 12px;">${societyInfo?.address || "Society Address"}</p>
+      <hr style="margin: 16px 0;" />
+
+      <p><strong>Name:</strong> ${payment.payerName || "—"}</p>
+      <p><strong>Flat No.:</strong> ${payment.flatNumber || "—"}</p>
+      <p><strong>Amount:</strong> ₹${payment.amount || "—"}</p>
+      <p><strong>For Month:</strong> ${payment.forMonth || "—"}</p>
+      <p><strong>Payment Method:</strong> ${payment.paymentMethod || "—"}</p>
+      ${
+        payment.transactionId
+          ? `<p><strong>Transaction ID:</strong> ${payment.transactionId}</p>`
+          : ""
+      }
+      <p style="font-size: 12px; color: gray;">
+        Paid on: ${payment.approvedAt ? new Date(payment.approvedAt).toLocaleDateString("en-IN") : "—"}
+      </p>
+
+      <p style="text-align: center; font-size: 12px; color: gray; margin-top: 20px;">Thank you for your payment!</p>
+    </div>
+  `;
+
+  // Append off-screen to DOM
+  document.body.appendChild(receiptNode);
+
+  try {
+    const blob = await domtoimage.toPng(receiptNode);
+    const pdf = new jsPDF("p", "mm", "a4");
+    const imgProps = pdf.getImageProperties(blob);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(blob, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`Receipt_${payment.payerName || "Unknown"}.pdf`);
+  } catch (err) {
+    console.error("❌ Error generating receipt PDF", err);
+  } finally {
+    // Clean up DOM
+    document.body.removeChild(receiptNode);
+  }
+};
+
+
+  // Generate month and year options for the dropdowns
+
+  const months = [...Array(12).keys()].map(i => ({
+    value: i + 1,
+    label: new Date(0, i).toLocaleString("default", { month: "long" }),
+  }));
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+  const safeReceipts = Array.isArray(receipts) ? receipts : [];
+const paginatedReceipts = safeReceipts.slice(
+  (currentPage - 1) * receiptsPerPage,
+  currentPage * receiptsPerPage
+);
+const totalPages = Math.ceil(safeReceipts.length / receiptsPerPage);
+
+  return (
+    <div className="bg-white p-6 rounded-2xl shadow-lg border space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h2 className="text-xl font-bold text-gray-800">Member Payment Receipts</h2>
+        <div className="flex gap-2">
+          <select onChange={(e) => setMonth(e.target.value)} value={month} className="border px-2 py-1 rounded text-sm">
+            <option value="">All Months</option>
+            {months.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+          <select onChange={(e) => setYear(e.target.value)} value={year} className="border px-2 py-1 rounded text-sm">
+            <option value="">All Years</option>
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+   <input
+     type="text"
+     placeholder="Flat No."
+    value={flatFilter}
+    onChange={(e) => setFlatFilter(e.target.value)}
+     className="border px-2 py-1 rounded text-sm"
+    />
+
+
+      {paginatedReceipts.length === 0 ? (
+        <p className="text-gray-500">No payment receipts found for the selected period.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm border border-gray-200">
+            <thead className="bg-gray-100 text-left">
+              <tr>
+                <th className="px-3 py-2">Name</th>
+                <th className="px-3 py-2">Flat</th>
+                <th className="px-3 py-2">Month</th>
+                <th className="px-3 py-2">Amount</th>
+                <th className="px-3 py-2">Mode</th>
+                <th className="px-3 py-2">Date</th>
+                <th className="px-3 py-2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedReceipts.map((p) => (
+                <tr key={p.id} className="border-t">
+                  <td className="px-3 py-2">{p.payerName || "—"}</td>
+                  <td className="px-3 py-2">{p.flatNumber || "—"}</td>
+                  <td className="px-3 py-2">{p.forMonth || "—"}</td>
+                  <td className="px-3 py-2">₹{p.amount}</td>
+                  <td className="px-3 py-2">{p.paymentMethod || "—"}</td>
+                  <td className="px-3 py-2">
+                    {new Date(p.approvedAt).toLocaleDateString("en-IN")}
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700"
+                      onClick={() => download(p)}
+                    >
+                      Download
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-4">
+              {[...Array(totalPages).keys()].map((i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-1 rounded ${
+                    currentPage === i + 1
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

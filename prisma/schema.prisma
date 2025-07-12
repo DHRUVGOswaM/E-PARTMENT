@@ -344,7 +344,6 @@ model PendingAccess {
 }
 
 // TRANSACTIONS///
-// TRANSACTIONS///
 model Transaction {
   id              String          @id @default(uuid())
   amount          Float

@@ -53,10 +53,10 @@ export default function DashboardSocietySecretary() {
         />
       </Link>
 
-      <Link href="/polls">
+      <Link href="/dashboard/society-admin/approve-payments">
         <Section
-          title="Polls & Voting"
-          description="Manage society polls and community decisions."
+          title="Approve Payments"
+          description="Review and approve pending payments from residents."
         />
       </Link>
 
