@@ -35,9 +35,13 @@ export default function HomePage() {
     if (originalLink === "/join-society" || originalLink === "/Features") {
       return originalLink;
     }
-    
+
     // For unauthorized users, redirect to feature showcase
-    if (!userRole || userRole === "VISITOR" || !hasRouteAccess(userRole, originalLink)) {
+    if (
+      !userRole ||
+      userRole === "VISITOR" ||
+      !hasRouteAccess(userRole, originalLink)
+    ) {
       return "/feature-showcase";
     }
     return originalLink;
@@ -94,15 +98,9 @@ export default function HomePage() {
             environments.
           </p>
           <div className="flex justify-center md:justify-start gap-4">
-            <Link
-              href="/register"
-              className="bg-red-600 text-white px-6 py-3 rounded-full hover:bg-red-700 transition"
-            >
-              Free* Subscription
-            </Link>
             <a
-              href="https://www.youtube.com/watch?v=YOUR_VIDEO_ID"
-              className="border border-blue-600 text-blue-600 px-6 py-3 rounded-full hover:bg-blue-50 transition"
+              href="https://www.youtube.com"
+              className="border border-blue-600 text-blue-600 px-6 py-3 rounded-full hover:bg-blue-300 transition"
             >
               Watch Intro
             </a>
@@ -124,12 +122,6 @@ export default function HomePage() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {[
             {
-              title: "Maintenance Bills",
-              img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748016525/WhatsApp_Image_2025-05-23_at_21.36.48_7698f839_k5pcas.jpg",
-              desc: "Generate maintenance bills within seconds for any billing frequency and send to members via SMS/Email.",
-              link: "/billing",
-            },
-            {
               title: "End-to-End Accounting",
               img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748016715/WhatsApp_Image_2025-05-23_at_21.40.22_368915a7_uhkm97.jpg",
               desc: "From billing to expenses, year-end transactions, audit statements, you get complete control.",
@@ -139,10 +131,10 @@ export default function HomePage() {
               title: "Visitor Management",
               img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748017704/WhatsApp_Image_2025-05-23_at_21.45.24_159de20f_uei3wx.jpg",
               desc: "Secure your premises by verifying every visitor directly with residents seamlessly.",
-              link: "/visitor",
+              link: "/dashboard/visitor/new",
             },
             {
-              title: "Complaint Tracking",
+              title: "Complaint Management",
               img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748092865/42352cec-7291-4c5b-a420-e16d62eca3b3.png",
               desc: "Log and resolve resident complaints quickly and efficiently with full transparency.",
               link: "/complaints",
@@ -154,76 +146,67 @@ export default function HomePage() {
               link: "/Facilities",
             },
             {
-              title: "Polls and Voting",
-              img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748017724/WhatsApp_Image_2025-05-23_at_21.56.25_0c8423d6_vxpofd.jpg",
-              desc: "Run community polls and voting for important decisions with security and ease.",
-              link: "/Polls",
-            },
-            {
-              title: "Emergency Alerts",
+              title: "Emergency Contacts",
               img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748017717/WhatsApp_Image_2025-05-23_at_21.52.25_2e8d5959_mua127.jpg",
-              desc: "Send urgent alerts and messages to all residents instantly in times of need.",
-              link: "/Alerts",
+              desc: "Quickly access emergency contacts for police, fire, and medical services with just a tap.",
+              link: "/emergency-contacts",
             },
             {
-              title: "Financial Reports",
-              img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748016715/WhatsApp_Image_2025-05-23_at_21.40.22_368915a7_uhkm97.jpg",
-              desc: "Generate detailed financial reports to track society finances and budgets effortlessly.",
-              link: "/Reports",
+              title: "Document Repository",
+              img: "/image.png",
+              desc: "Store, access and manage all important society documents in a secure, organized digital repository anytime.",
+              link: "/document",
             },
             {
-  title: "Document Repository",
-  img: "/image.png",
-  desc: "Store, access and manage all important society documents in a secure, organized digital repository anytime.",
-  link: "/document",
-},
-{
-  title: "Staff Management",
-  img: "/image copy.png",
-  desc: "Maintain staff details, shift schedules, and assign responsibilities with complete visibility.",
-  link: "/staff",
-},           {
-              title: "Explore All Features",
-              img: "https://res.cloudinary.com/dayrre5om/image/upload/v1748093218/1f0df4b4-dd0e-4d2e-9130-2559609355c1.png",
-              desc: "Check out all features that AppSociety has to offer today, while we keep adding many more.",
-              link: "/Features",
+              title: "Staff Management",
+              img: "/image copy.png",
+              desc: "Maintain staff details, shift schedules, and assign responsibilities with complete visibility.",
+              link: "/staff",
             },
-            
           ].map((feature, index) => {
             const linkHref = getFeatureLink(feature.link);
-            const isRedirectToShowcase = linkHref === "/feature-showcase" && feature.link !== "/feature-showcase";
-            const isRedirectToJoin = linkHref === "/join-society" && feature.link !== "/join-society";
-            
+            const isRedirectToShowcase =
+              linkHref === "/feature-showcase" &&
+              feature.link !== "/feature-showcase";
+            const isRedirectToJoin =
+              linkHref === "/join-society" && feature.link !== "/join-society";
+
             return (
-            <Link href={linkHref} key={index} className="block relative group">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white border p-6 rounded-xl shadow-md hover:shadow-xl transition duration-300 hover:border-blue-300"
+              <Link
+                href={linkHref}
+                key={index}
+                className="block relative group"
               >
-                <div className="w-full h-40 relative mb-4">
-                  <Image
-                    src={feature.img}
-                    alt={feature.title}
-                    fill
-                    className="object-contain rounded-md"
-                  />
-                </div>
-                <h3 className="font-bold text-lg text-center text-blue-900 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-center text-gray-600">
-                  {feature.desc}
-                </p>
-                {(isRedirectToShowcase || isRedirectToJoin) && (
-                  <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    {isRedirectToShowcase ? "Preview Feature" : "Join to Access"}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="bg-white border p-6 rounded-xl shadow-md hover:shadow-xl transition duration-300 hover:border-blue-300"
+                >
+                  <div className="w-full h-40 relative mb-4">
+                    <Image
+                      src={feature.img}
+                      alt={feature.title}
+                      fill
+                      className="object-contain rounded-md"
+                    />
                   </div>
-                )}
-              </motion.div>
-            </Link>
+                  <h3 className="font-bold text-lg text-center text-blue-900 mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-center text-gray-600">
+                    {feature.desc}
+                  </p>
+                  {(isRedirectToShowcase || isRedirectToJoin) && (
+                    <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isRedirectToShowcase
+                        ? "Preview Feature"
+                        : "Join to Access"}
+                    </div>
+                  )}
+                </motion.div>
+              </Link>
             );
           })}
         </div>

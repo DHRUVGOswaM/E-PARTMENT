@@ -90,6 +90,7 @@ export async function GET(req) {
     const baseFilter = {
       type: "INCOME",
       paidStatus: true,
+      recorderId: user.id,
       isApproved: true,
       ...dateFilter,
       ...flatFilter, // ✅ Inject flat number filter if exists

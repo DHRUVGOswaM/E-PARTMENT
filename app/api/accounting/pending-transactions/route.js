@@ -20,6 +20,7 @@ export async function GET() {
       type: "INCOME",
       paidStatus: true,
       isApproved: false,
+      recorderId: admin.id,
     },
     include: {
       recorder: {
