@@ -178,7 +178,7 @@ export default function StaffHome() {
               
               <Link
                 className="block p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
-                href="/staff-management/assign-task"
+                href="/staff-management/assign"
               >
                 <h3 className="font-semibold text-red-800">Assign Task</h3>
                 <p className="text-red-600 text-sm">Allocate daily tasks to staff</p>

@@ -33,6 +33,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
+
     return NextResponse.json(staff);
   } catch (err) {
     console.error("GET staff error:", err);

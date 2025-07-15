@@ -15,7 +15,7 @@ export default async function VisitorPage({ params }) {
     return <div className="text-red-500 p-4 text-center">Visitor not found</div>;
   }
 
-  const visitorUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/visitor/checkin?token=${visitor.qrCodeToken}`;
+  const visitorUrl = `${visitor.qrCodeToken}`;
 
   return (
     <div className="p-6 text-center">

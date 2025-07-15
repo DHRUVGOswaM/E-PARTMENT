@@ -8,12 +8,14 @@ export default function QrScanPage() {
   const router = useRouter();
 
   const handleScan = (decodedText) => {
-    try {
-      const url = new URL(decodedText);
-      const token = url.searchParams.get("token");
+   try {
+    //   const url = new URL(decodedText);
+    //   console.log(url);
+    //   const token = url.searchParams.get("token");
+    //   console.log("Token from QR Code:", token);
 
-      if (token) {
-        router.push(`/dashboard/visitor/checkin?token=${token}`);
+      if (decodedText) {
+        router.push(`/dashboard/visitor/checkin?token=${decodedText}`);
       } else {
         alert("Invalid QR Code: Token not found.");
       }

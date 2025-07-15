@@ -44,19 +44,18 @@ export default function VisitorsList() {
       <h1 className="text-2xl font-semibold">Society Visitors</h1>
 
       <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Phone</TableCell>
-            <TableCell>Purpose</TableCell>
-            <TableCell>Flat / Building</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Check-In</TableCell>
-            <TableCell>Check-Out</TableCell>
-          </TableRow>
-        </TableHead>
+        
 
         <TableBody>
+          <TableRow>
+            <TableCell className="font-bold">Name</TableCell>
+            <TableCell className="font-bold">Phone</TableCell>
+            <TableCell className="font-bold">Purpose</TableCell>
+            <TableCell className="font-bold">Flat / Building</TableCell>
+            <TableCell className="font-bold">Status</TableCell>
+            <TableCell className="font-bold">Check-In</TableCell>
+            <TableCell className="font-bold">Check-Out</TableCell>
+          </TableRow>
           {rows.map((v) => (
             <TableRow key={v.id}>
               <TableCell>{v.name}</TableCell>

@@ -18,7 +18,6 @@ export default function QrScanner({ onScan }) {
     try {
       const html5QrCode = new Html5Qrcode("qr-reader-image");
       const decoded = await html5QrCode.scanFile(file, true); // ✅ File passed directly
-      console.log("Scanned QR:", decoded);
       onScan(decoded);
     } catch (err) {
       console.error("Scan error:", err);

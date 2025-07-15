@@ -13,7 +13,11 @@ const navItems = [
   { name: "About", path: "/about", icon: <Info className="w-5 h-5" /> },
   { name: "Contact", path: "/contact", icon: <Phone className="w-5 h-5" /> },
   { name: "FAQ's", path: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
-  { name: "Documents", path: "/document-repository", icon: <HelpCircle className="w-5 h-5" /> },
+  {
+    name: "Documents",
+    path: "/document-repository",
+    icon: <HelpCircle className="w-5 h-5" />,
+  },
 ];
 
 export default function NavbarClient() {
@@ -32,8 +36,6 @@ export default function NavbarClient() {
         .catch((err) => console.error("Failed to fetch user:", err));
     }
   }, [isSignedIn]);
-  
-  
 
   const renderDashboardLink = () => {
     if (!dbUser?.role) return null;
@@ -60,32 +62,57 @@ export default function NavbarClient() {
             <div className="relative group">
               <button className={`${baseBtn} flex items-center gap-1`}>
                 Society Admin
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
               <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="py-1">
-                  <Link href="/dashboard/society-admin" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <Link
+                    href="/dashboard/society-admin"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
                     Society Admin Panel
                   </Link>
-                  <Link href="/watchman-logs" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <Link
+                    href="/watchman-logs"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
                     Activity Logs
                   </Link>
-                  <Link href="/staff-management" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <Link
+                    href="/staff-management"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
                     Staff Management
                   </Link>
-                  <Link href="/allVisitor" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <Link
+                    href="/allVisitor"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
                     Visitor Management
                   </Link>
-                  <Link href="/Facilities" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Facility Booking
+                  <Link
+                    href="/Accounting"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Accounting Management
                   </Link>
-                  <Link href="/polls" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Polls & Voting
-                  </Link>
-                  <Link href="/Accounting" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Financial Management
+                  <Link
+                    href="/dashboard/society-admin/approve-payments"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Approve Payments
                   </Link>
                 </div>
               </div>
@@ -176,13 +203,25 @@ export default function NavbarClient() {
                 {renderDashboardLink()}
                 {dbUser?.role === "SOCIETY_ADMIN" && (
                   <div className="mt-2 space-y-2">
-                    <Link href="/watchman-logs" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md">
+                    <Link
+                      href="/watchman-logs"
+                      onClick={() => setIsOpen(false)}
+                      className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md"
+                    >
                       Activity Logs
                     </Link>
-                    <Link href="/Facilities" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md">
+                    <Link
+                      href="/Facilities"
+                      onClick={() => setIsOpen(false)}
+                      className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md"
+                    >
                       Facility Booking
                     </Link>
-                    <Link href="/dashboard/visitor" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md">
+                    <Link
+                      href="/dashboard/visitor"
+                      onClick={() => setIsOpen(false)}
+                      className="block px-4 py-2 text-sm text-blue-900 hover:bg-blue-200 rounded-md"
+                    >
                       Visitor Management
                     </Link>
                   </div>

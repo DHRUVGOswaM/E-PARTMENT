@@ -93,6 +93,13 @@ export async function POST(request) {
     console.log("📨 POST Request - Received body:", body);
 
     const prismaUserId = await getPrismaUserId(clerkUserId, userEmail);
+    const prismaUser = await db.user.findUnique({
+  where: { id: prismaUserId },
+  select: { role: true }
+});
+
+ const isAdmin = prismaUser?.role === "SOCIETY_ADMIN";
+
     if (!prismaUserId) {
       return NextResponse.json(
         { message: "Failed to link user, cannot add transaction." },
@@ -155,7 +162,9 @@ const mappedPaymentMethod = paymentMethodMap[paymentMethod] || null;
     payerName: payerName || null,
     flatNumber: flatNumber || null,
     forMonth: forMonth || null,
-    isApproved: false,
+    isApproved: isAdmin ? true : false,
+    approvedAt: isAdmin ? new Date() : null,
+    approvedBy: isAdmin ? prismaUserId : null,
     paidStatus: paidStatus ?? true,
     bankName: bankName || null,
     ifscCode: ifscCode || null,

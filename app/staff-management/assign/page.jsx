@@ -43,7 +43,7 @@ export default function AssignShiftTaskPage() {
 
         <input
           type="text"
-          placeholder="Staff ID"
+          placeholder="Staff ID/Staff Name"
           className="border p-2 w-full rounded"
           value={staffId}
           onChange={(e) => setStaffId(e.target.value)}

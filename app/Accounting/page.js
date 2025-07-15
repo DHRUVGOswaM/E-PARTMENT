@@ -1244,7 +1244,7 @@ useEffect(() => {
 
         {/* Member Receipts Section */}
       {role !== 'VISITOR' && (
-  <ReceiptTable societyInfo={societyInfo} />
+<ReceiptTable societyInfo={societyInfo} userRole={role} />
 )}
   
         {/* Back to Dashboard Link */}
@@ -1263,11 +1263,12 @@ useEffect(() => {
 // import domtoimage from "dom-to-image";
 // import jsPDF from "jspdf";
 
-function ReceiptTable({ societyInfo }) {
+function ReceiptTable({ societyInfo, userRole }) {
   const [receipts, setReceipts] = useState([]);
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [flatFilter, setFlatFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const receiptsPerPage = 6;
 
@@ -1277,6 +1278,7 @@ function ReceiptTable({ societyInfo }) {
       if (month) query.append("month", month);
       if (year) query.append("year", year);
       if (flatFilter) query.append("flat", flatFilter);
+      if (typeFilter) query.append("type", typeFilter);
       const res = await fetch(`/api/accounting/approve-transaction?${query.toString()}`);
       const data = await res.json();
       setReceipts(data);
@@ -1288,7 +1290,7 @@ function ReceiptTable({ societyInfo }) {
 
   useEffect(() => {
     fetchReceipts();
-  }, [month, year, flatFilter]);
+  }, [month, year, flatFilter, typeFilter]);
 
 
   const download = async (payment) => {
@@ -1300,28 +1302,31 @@ function ReceiptTable({ societyInfo }) {
   receiptNode.style.width = "600px"; // maintain consistent width
 
   receiptNode.innerHTML = `
-    <div style="border:1px solid #ccc; padding: 20px;">
-      <h2 style="text-align: center; color: #2563eb; margin: 0;">${societyInfo?.name || "Society Name"}</h2>
-      <p style="text-align: center; margin: 0; font-size: 12px;">${societyInfo?.address || "Society Address"}</p>
-      <hr style="margin: 16px 0;" />
+  <div style="border:1px solid #ccc; padding: 20px;">
+    <h2 style="text-align: center; color: #2563eb; margin: 0;">${societyInfo?.name || "Society Name"}</h2>
+    <p style="text-align: center; margin: 0; font-size: 12px;">${societyInfo?.address || "Society Address"}</p>
+    <hr style="margin: 16px 0;" />
 
-      <p><strong>Name:</strong> ${payment.payerName || "—"}</p>
-      <p><strong>Flat No.:</strong> ${payment.flatNumber || "—"}</p>
-      <p><strong>Amount:</strong> ₹${payment.amount || "—"}</p>
-      <p><strong>For Month:</strong> ${payment.forMonth || "—"}</p>
-      <p><strong>Payment Method:</strong> ${payment.paymentMethod || "—"}</p>
-      ${
-        payment.transactionId
-          ? `<p><strong>Transaction ID:</strong> ${payment.transactionId}</p>`
-          : ""
-      }
-      <p style="font-size: 12px; color: gray;">
-        Paid on: ${payment.approvedAt ? new Date(payment.approvedAt).toLocaleDateString("en-IN") : "—"}
-      </p>
+    <p><strong>Name:</strong> ${payment.payerName || "—"}</p>
+    <p><strong>Flat No.:</strong> ${payment.flatNumber || "—"}</p>
+    <p><strong>Amount:</strong> ₹${payment.amount || "—"}</p>
+    <p><strong>Category:</strong> ${payment.category || "—"}</p>        <!-- ✅ Category -->
+    <p><strong>Description:</strong> ${payment.description || "—"}</p>  <!-- ✅ Description -->
+    <p><strong>For Month:</strong> ${payment.forMonth || "—"}</p>
+    <p><strong>Payment Method:</strong> ${payment.paymentMethod || "—"}</p>
+    ${
+      payment.transactionId
+        ? `<p><strong>Transaction ID:</strong> ${payment.transactionId}</p>`
+        : ""
+    }
+    <p style="font-size: 12px; color: gray;">
+      Paid on: ${payment.approvedAt ? new Date(payment.approvedAt).toLocaleDateString("en-IN") : "—"}
+    </p>
 
-      <p style="text-align: center; font-size: 12px; color: gray; margin-top: 20px;">Thank you for your payment!</p>
-    </div>
-  `;
+    <p style="text-align: center; font-size: 12px; color: gray; margin-top: 20px;">Thank you for your payment!</p>
+  </div>
+`;
+
 
   // Append off-screen to DOM
   document.body.appendChild(receiptNode);
@@ -1381,6 +1386,18 @@ const totalPages = Math.ceil(safeReceipts.length / receiptsPerPage);
               </option>
             ))}
           </select>
+          
+          {userRole === "SOCIETY_ADMIN" && (
+  <select
+    onChange={(e) => setTypeFilter(e.target.value)}
+    value={typeFilter}
+    className="border px-2 py-1 rounded text-sm"
+  >
+    <option value="">All Types</option>
+    <option value="INCOME">Income</option>
+    <option value="EXPENSE">Expense</option>
+  </select>
+)}
         </div>
       </div>
    <input

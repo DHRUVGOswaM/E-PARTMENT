@@ -42,7 +42,7 @@ export default function ApprovePayments() {
     mutate: refreshApproved,
     isLoading: loadingApproved,
   } = useSWR(
-    `/api/accounting/approve-transactions?month=${selectedMonth}&year=${selectedYear}`,
+    `/api/accounting/approve-transaction?month=${selectedMonth}&year=${selectedYear}`,
     fetcher
   );
 

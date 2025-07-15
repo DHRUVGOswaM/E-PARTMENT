@@ -32,7 +32,7 @@ const features = [
   {
     title: "Staff Management",
     icon: <FileSignature className="h-8 w-8" />,
-    href: "/staff-management",
+    href: "/staff",
   },
 
   {

@@ -43,14 +43,16 @@ export async function POST(request) {
   }
 }
 
-// GET: Fetch approved payments (optionally filter by month & year)
+// GET: Fetch approved payments (optionally filter by month, year, flat, type)
 export async function GET(req) {
   try {
     const { userId: clerkUserId } = await auth();
     const { searchParams } = new URL(req.url);
+
     const year = parseInt(searchParams.get("year"));
     const month = parseInt(searchParams.get("month"));
-    const flat = searchParams.get("flat"); // ✅ NEW
+    const flat = searchParams.get("flat"); // ✅ flat filter
+    const type = searchParams.get("type"); // ✅ income/expense filter
 
     if (!clerkUserId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -58,17 +60,18 @@ export async function GET(req) {
 
     const user = await db.user.findUnique({
       where: { clerkUserId },
-      select: { id: true, role: true },
+      select: { id: true, role: true, societyId: true },
     });
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
+    // ✅ Date Filter
     let dateFilter = {};
     if (!isNaN(year) && !isNaN(month)) {
       const start = new Date(year, month - 1, 1);
-      const end = new Date(year, month, 1); // next month
+      const end = new Date(year, month, 1);
       dateFilter = {
         approvedAt: {
           gte: start,
@@ -77,7 +80,7 @@ export async function GET(req) {
       };
     }
 
-    // ✅ Optional flatNumber filter
+    // ✅ Flat Number Filter
     let flatFilter = {};
     if (flat) {
       flatFilter.flatNumber = {
@@ -86,20 +89,34 @@ export async function GET(req) {
       };
     }
 
-    // Base filter: approved INCOME transactions
+    // ✅ Type Filter (only if type is either 'INCOME' or 'EXPENSE')
+    let typeFilter = {};
+    if (type === "INCOME" || type === "EXPENSE") {
+      typeFilter.type = type;
+    }
+
     const baseFilter = {
-      type: "INCOME",
       paidStatus: true,
-      recorderId: user.id,
       isApproved: true,
+      ...(type ? { type } : {}),
       ...dateFilter,
-      ...flatFilter, // ✅ Inject flat number filter if exists
+      ...flatFilter,
+      ...typeFilter,
     };
 
-    // Admin sees all; others see their own
-    const filter = user.role === "SOCIETY_ADMIN"
-      ? baseFilter
-      : { ...baseFilter, recorderId: user.id };
+    const filter =
+      user.role === "SOCIETY_ADMIN"
+        ? {
+            ...baseFilter,
+            recorder: {
+              societyId: user.societyId,
+            },
+          }
+        : {
+            ...baseFilter,
+            type: "INCOME", // residents only see income receipts
+            recorderId: user.id,
+          };
 
     const approved = await db.transaction.findMany({
       where: filter,
@@ -115,6 +132,9 @@ export async function GET(req) {
         transactionId: true,
         paidStatus: true,
         isApproved: true,
+        type: true, // 
+        category: true,         
+        description: true       
       },
     });
 
@@ -127,5 +147,6 @@ export async function GET(req) {
     );
   }
 }
+
 
 

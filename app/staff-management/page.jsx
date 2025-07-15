@@ -24,7 +24,7 @@ export default function StaffCenter() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, );
 
   const updateStatus = async (id, newStatus) => {
     try {
@@ -83,7 +83,7 @@ export default function StaffCenter() {
                     <p className="text-sm text-muted-foreground">
                       Status:{" "}
                       <select
-                        value={s.status}
+                        value={s.staffRole}
                         onChange={(e) => updateStatus(s.id, e.target.value)}
                         className="border px-2 py-1 rounded-md text-sm"
                       >
