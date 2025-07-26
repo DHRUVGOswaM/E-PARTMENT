@@ -41,8 +41,8 @@ export async function POST(req) {
         apartmentName: body.apartmentName,
         totalFlats: parseInt(body.totalFlats),
         status: "PENDING",
-        quotedAmount: null,
-        appliedByUserId: loggedInUser.id, // Link to the user who applied
+        //quotedAmount: 0, // Default value
+        //appliedByUserId: loggedInUser.id, // Link to the user who applied
       },
     });
 
@@ -51,6 +51,7 @@ export async function POST(req) {
       pendingAdmin,
     });
   } catch (error) {
+    console.log("Error creating pending admin request:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

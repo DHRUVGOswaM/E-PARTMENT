@@ -25,7 +25,7 @@ export async function POST(req) {
           where: { id },
           data: {
             status: "QUOTED",
-            quotedAmount: finalAmount,
+            //quotedAmount: finalAmount,
           },
         });
         return NextResponse.json({ message: "Quoted Amount Sent to Applicant" }, { status: 200 });

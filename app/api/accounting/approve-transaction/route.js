@@ -132,7 +132,7 @@ export async function GET(req) {
         transactionId: true,
         paidStatus: true,
         isApproved: true,
-        type: true, // 
+        type: true, 
         category: true,         
         description: true       
       },

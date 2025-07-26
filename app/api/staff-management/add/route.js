@@ -36,7 +36,7 @@ export async function POST(req) {
         name,
         role,
         salary: Number(salary),
-        phoneNumber,
+        phoneNumber: String(phoneNumber),
         societyId: user.societyId,
         userId: user.id, // link creator
       },
@@ -67,6 +67,7 @@ export async function GET() {
 
     return NextResponse.json(staffList);
   } catch (err) {
+    
     console.error("GET /api/staff:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
